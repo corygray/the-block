@@ -1,0 +1,692 @@
+<title>The Block Layouts</title>
+<style>
+  /* ---------- Tokens ---------- */
+  :root {
+    --paper: #F4F6F8;
+    --surface: #FFFFFF;
+    --surface-alt: #EEF1F5;
+    --ink: #10202E;
+    --slate: #55697D;
+    --slate-soft: #5A6E82;
+    --line: #DCE2E8;
+    /* No more --harbor blue tokens, per the "too many blues" feedback. Interactive
+       elements (buttons, focus rings, link hover) now reuse --ink/--paper, which already
+       flip correctly per theme — no separate accent token needed. Amber remains the only
+       hue-based accent, reserved for auction urgency (current bid, "ends in" labels). */
+    --amber: #96600A;
+    --amber-soft: #FBEEDA;
+    --good: #23744F;
+    --good-soft: #E4F3EC;
+    --bad: #A3342F;
+    --bad-soft: #FBE7E6;
+    --shadow: 0 8px 24px -12px rgb(16 32 46 / 0.25);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0B1420;
+      --surface: #121D2C;
+      --surface-alt: #16233A;
+      --ink: #EAF0F6;
+      --slate: #9FB1C4;
+      --slate-soft: #728AA1;
+      --line: #263A4E;
+      --amber: #E0A23D;
+      --amber-soft: #34270F;
+      --good: #57B78C;
+      --good-soft: #163425;
+      --bad: #E27A75;
+      --bad-soft: #3A1B1B;
+      --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0B1420;
+    --surface: #121D2C;
+    --surface-alt: #16233A;
+    --ink: #EAF0F6;
+    --slate: #9FB1C4;
+    --slate-soft: #728AA1;
+    --line: #263A4E;
+    --amber: #E0A23D;
+    --amber-soft: #34270F;
+    --good: #57B78C;
+    --good-soft: #163425;
+    --bad: #E27A75;
+    --bad-soft: #3A1B1B;
+    --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+
+  * , *::before, *::after { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  button { font: inherit; }
+  .mono { font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Status bar (meta UI, not part of the product) ---------- */
+  .statusbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--ink); color: var(--paper);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border-bottom: 3px solid var(--amber);
+  }
+  .statusbar .tag {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--amber); color: #241900; padding: 3px 8px; border-radius: 3px; font-weight: 700; flex-shrink: 0;
+  }
+  .statusbar .caption { font-size: 13px; color: var(--slate-soft); }
+  .statusbar .caption strong { color: var(--paper); }
+
+  .concept-note {
+    background: var(--surface-alt); border-bottom: 1px solid var(--line);
+    padding: 10px 20px; font-size: 13px; color: var(--ink);
+  }
+  .concept-note strong { color: var(--ink); }
+
+  /* ---------- Container ----------
+     Each full-width section (header, body, footer) stays full-bleed for its background/
+     border, while a `.container` child caps the actual content at 1920px and centers it —
+     so the section's visual band can span the viewport but the content inside never
+     stretches into an unreasonably wide single line on very large screens. Layout
+     properties that used to live directly on .site-header/.body/.site-footer now live on
+     `.site-header .container` etc. instead. */
+  .container { max-width: 1920px; width: 100%; margin: 0 auto; }
+
+  /* ---------- Shared header / footer ---------- */
+  .site-header {
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .site-header .container {
+    padding: 14px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  }
+  .wordmark { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+  .wordmark .chip { background: var(--ink); color: var(--paper); font-size: 11px; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.04em; }
+  .site-nav { display: flex; gap: 20px; font-size: 14px; font-weight: 600; color: var(--slate); }
+  .site-nav a { color: inherit; text-decoration: none; }
+  /* Underline on hover, not just a color shift — a link's hover state shouldn't rely on
+     color alone either. Uses --ink (theme-flipping) rather than a fixed dark value, so it
+     stays correctly contrasted in dark mode too. */
+  .site-nav a:hover { color: var(--ink); text-decoration: underline; }
+  /* Fixed white (not var(--surface), which is dark in dark mode) so the search field
+     always stands out from the header — in dark mode especially, --surface-alt was
+     nearly the same dark tone as the header behind it. Input text is pinned dark to
+     match, same reasoning as the expanded card: a background that doesn't flip with the
+     theme needs text that doesn't either, or dark-mode users get invisible text. */
+  /* flex-grow: 0 (not 1) + margin-left: auto — rather than growing to fill the row, the
+     search bar keeps a fixed-ish width and the auto margin pushes it (and everything
+     after it, i.e. header-actions) as a group over to the right edge, so it sits snug
+     against Sign In / Register instead of floating in the middle of the header. */
+  .header-search {
+    flex: 0 1 320px; max-width: 420px; margin-left: auto; display: flex; align-items: center; gap: 8px;
+    background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px;
+  }
+  .header-search input { border: 0; background: transparent; outline: none; color: #10202E; font-size: 14px; width: 100%; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    border-radius: 7px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent;
+  }
+  /* A filled button needs to invert against whatever the page background is, and
+     --ink/--paper already do that by construction (each theme defines them as an
+     opposite pair), so this pairing pops correctly in both light and dark mode without a
+     fixed color or a special case for either theme. */
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { filter: brightness(0.85); }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--slate-soft); }
+  /* Fixed green (not the theme-flipping --good token) — checked contrast before picking
+     it: white text on --good's dark-mode value (#57B78C, a brighter green meant to read
+     as text-on-dark) comes out to only ~2.5:1, well under the 4.5:1 floor. #1B7A4D is
+     picked specifically to keep white text legible (~5.3:1) against it in both themes,
+     independent of --good's own theme-driven brightness. */
+  .btn-cta { background: #1B7A4D; color: #FFFFFF; }
+  .btn-cta:hover { background: #145F3C; }
+  .btn-sm { padding: 6px 11px; font-size: 12px; }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .site-footer {
+    background: var(--ink); color: var(--slate-soft); margin-top: 40px; font-size: 13px;
+  }
+  .site-footer .container {
+    padding: 18px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .site-footer a { color: var(--paper); text-decoration: none; opacity: 0.85; }
+  .site-footer a:hover { opacity: 1; }
+  .footer-links { display: flex; gap: 18px; }
+
+  /* ---------- Badges ---------- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .pill-good { background: var(--good-soft); color: var(--good); }
+  .pill-warn { background: var(--amber-soft); color: var(--amber); }
+  .pill-bad  { background: var(--bad-soft); color: var(--bad); }
+  /* pill-good/warn/bad don't need a border — their tinted backgrounds (green/amber/red)
+     are hue-distinct from any grey row background they might sit on. pill-neutral is the
+     one exception: its background is literally the same token as the even-row zebra
+     stripe (var(--surface-alt)), so on even rows the badge's fill coincidentally matched
+     its surroundings and the badge disappeared. A border makes it read as a shape
+     regardless of what happens to be behind it, rather than depending on a background
+     mismatch that can collide. */
+  /* Padding trimmed by exactly the border width (2px→7px instead of the base pill's
+     3px→8px) so this pill's outer footprint still matches its borderless siblings
+     (good/warn/bad) when they sit side by side in the same badge row. */
+  .pill-neutral { background: var(--surface-alt); color: var(--slate); border: 1px solid var(--slate-soft); padding: 2px 7px; }
+  /* Same green + white pairing as the Sign In CTA, deliberately as a solid badge rather
+     than bare colored text. Plain #1B7A4D text sitting directly on the row's ambient
+     background would repeat the dark-mode contrast bug from earlier fixes this session —
+     it only clears ~3.2:1 against a dark row background, under the 4.5:1 floor. A filled
+     badge carries its own background, so it stays legible (white on #1B7A4D, ~5.3:1)
+     no matter what surface it's sitting on. */
+  .pill-live { background: #1B7A4D; color: #FFFFFF; }
+
+  .photo-ph {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 10px, var(--paper) 10px, var(--paper) 20px);
+    color: var(--slate-soft); font-size: 12px; font-weight: 600; text-align: center; overflow: hidden;
+  }
+  .photo-ph .count {
+    position: absolute; bottom: 6px; right: 6px; background: rgb(16 32 46 / 0.7); color: #fff;
+    font-size: 10.5px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;
+  }
+  .photo-ph svg { width: 13px; height: 13px; }
+
+  /* =====================================================================
+     Option A — Auction Floor, with inline accordion detail/bid
+     ===================================================================== */
+  /* padding-top on .body itself, not margin-top on .container — a margin here would
+     collapse straight through .body (it has no background/border/padding of its own to
+     stop that) and land above it instead of inside it. That's invisible today since .body
+     has no background to reveal the difference, but it'd be a surprise the moment it
+     does. Padding keeps the gap unconditionally "inside" the section. */
+  .body { padding-top: 32px; }
+  .body .container { display: grid; grid-template-columns: 240px 1fr; column-gap: 32px; align-items: start; }
+  .filters {
+    background: var(--surface); border-right: 1px solid var(--line); padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 18px; position: sticky; top: 84px;
+  }
+  .filters h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--slate-soft); margin-bottom: 8px; }
+  .filters .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .filters label, .filters .field-label { font-size: 12.5px; font-weight: 600; color: var(--slate); }
+  .filters select, .filters input[type="number"] {
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; background: var(--surface); color: var(--ink); font-size: 13px;
+  }
+  /* Number inputs have a browser-default intrinsic width that flexbox won't shrink on its
+     own (they ignore `flex-basis`/percentage sizing unless min-width is reset), which is
+     why the two Min/Max fields were pushing past the sidebar's edge. `flex: 1 1 0` +
+     `min-width: 0` force them to actually share the row's available space, and dropping
+     the native spin-button arrows reclaims a bit more width for the digits. */
+  .filters .range { display: flex; gap: 6px; align-items: center; }
+  .filters .range input[type="number"] {
+    flex: 1 1 0; min-width: 0; width: 100%; padding: 7px 6px;
+    -moz-appearance: textfield;
+  }
+  .filters .range input[type="number"]::-webkit-inner-spin-button,
+  .filters .range input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .filters .range span { flex-shrink: 0; color: var(--slate-soft); font-size: 12px; }
+  @media (max-width: 340px) {
+    .filters .range { flex-wrap: wrap; }
+    .filters .range span { display: none; }
+    .filters .range input[type="number"] { flex-basis: 100%; }
+  }
+  .filters .check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); margin-bottom: 6px; }
+
+  .listing-toolbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--slate);
+    background: var(--surface-alt);
+  }
+  .toolbar-info { display: flex; align-items: center; gap: 8px; }
+  /* Sort lives here, in the toolbar over the results, deliberately separate from the
+     sidebar filters — filtering narrows *what's* in the list, sorting only changes the
+     *order* of whatever's already there, so they're different mental operations and
+     shouldn't share one control cluster. */
+  .sort-control { display: flex; align-items: center; gap: 8px; }
+  .sort-control label { font-weight: 600; color: var(--slate); }
+  .sort-control select {
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--surface);
+    color: var(--ink); font-size: 13px;
+  }
+
+  .lot-item { position: relative; border-bottom: 1px solid var(--line); }
+  .lot-item:nth-child(even) .lot-row { background: var(--surface-alt); }
+  .lot-row {
+    display: grid; grid-template-columns: 96px 1.6fr 1fr 1fr 0.9fr auto; gap: 16px; align-items: center;
+    padding: 12px 20px; cursor: pointer; background: var(--surface); border: 0; width: 100%; text-align: left; font: inherit; color: inherit;
+  }
+  /* Hover matches the expanded card's own background (#E1E4E7) rather than the zebra
+     stripe color — using the stripe color made hover hard to tell apart from the
+     alternating row shading. Matching the expanded color also means a hovered row
+     previews the exact shade it'll have once opened.
+     Selector is `.lot-item .lot-row:hover` (not just `.lot-row:hover`) so it's specific
+     enough to beat the even-row zebra rule above — a bare `:hover` was losing to it on
+     even rows since `.lot-item:nth-child(even) .lot-row` is more specific than
+     `.lot-row:hover` alone, regardless of source order.
+     Text color: same bug class as the earlier "white background" issue — .title/.sub/
+     .specs/.bid-amt/.bid-meta read their color from --ink/--slate/--slate-soft, which
+     are LIGHT in dark mode (built for light text on a dark row). Only changing the
+     background left dark-mode users with light text on a now-light background. Pin the
+     same dark values used in the expanded card here too, so hover is legible under any
+     theme. Checked contrast: #10202E and #000000 against #E1E4E7 (rgb 225,228,231,
+     relative luminance ~0.79) both land north of 15:1 — far past the WCAG AA 4.5:1 floor
+     for normal text and AAA's 7:1. */
+  /* Explicit focus ring — without this, keyboard focus on the row button falls back to
+     whatever blue the browser's default UA stylesheet supplies, which would quietly
+     reintroduce a random blue we don't control and can't guarantee is legible against
+     every row background. Uses --ink (theme-flipping) for the same reason as the
+     button/link fix above — a fixed dark ring would nearly disappear against a
+     dark-mode row. */
+  .lot-row:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .lot-item .lot-row:hover {
+    background: #E1E4E7;
+    --ink: #10202E;
+    --slate: #000000;
+    --slate-soft: #000000;
+    color: var(--ink);
+  }
+  /* pill-neutral (the "No Reserve" / "Reserve Not Met" badge) keeps its own fixed
+     background (~#EEF1F5) regardless of row state, so it wasn't visually reacting to
+     hover at all. Flip it to a dark background + the hover accent as its text color on
+     hover, echoing the chevron badge's own hover/active treatment, instead of setting the
+     text to #E1E4E7 directly against its unchanged light background — that pairing would
+     have been ~1.1:1 contrast, effectively invisible. #E1E4E7 text on #10202E lands
+     around 13:1. */
+  .lot-item .lot-row:hover .pill-neutral { background: #10202E; color: #E1E4E7; }
+  .lot-row .photo-ph { width: 96px; height: 68px; border-radius: 6px; }
+  .lot-row .title { font-weight: 700; font-size: 14.5px; }
+  .lot-row .sub { font-size: 12.5px; color: var(--slate); margin-top: 2px; }
+  .lot-row .specs { font-size: 12px; color: var(--slate); display: flex; flex-direction: column; gap: 3px; }
+  .lot-row .bid-col { text-align: right; }
+  .lot-row .bid-amt { font-size: 16px; font-weight: 800; }
+  .lot-row .bid-meta { font-size: 11.5px; color: var(--slate); }
+  .lot-row .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+  /* Toggle affordance: a text label that changes ("Details" / "Hide") is the primary
+     signal here, not color — it reads the same regardless of color vision. The chevron
+     is a secondary, redundant cue for sighted users scanning quickly. */
+  .toggle { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .chevron-badge {
+    width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--slate-soft); color: var(--slate); flex-shrink: 0; transition: transform 200ms ease, background 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  .chevron-badge svg { width: 13px; height: 13px; }
+
+  /* Expanded state — a solid dark border + rounded card + real elevation, not a color
+     wash. This reads by contrast and shape alone, so it doesn't depend on being able to
+     tell two shades of blue apart. Placed after the zebra-stripe rule so its background
+     always wins regardless of odd/even row. */
+  .lot-item.expanded {
+    /* Force the light-mode token values within this card, regardless of the page's
+       active theme. The previous attempt used var(--surface), which is correct in light
+       mode but resolves to a dark navy in dark mode/system-dark — so the "white card"
+       silently stopped being white. Re-declaring the tokens here pins this card to a
+       literal white surface with readable dark text no matter what theme the rest of
+       the page is in, and every descendant (row, accordion panel, badges, bid form)
+       inherits these same overridden values automatically.
+
+       Two follow-up tweaks: --surface is a light neutral grey (#E1E4E7) rather than pure
+       #FFFFFF — softer, still reads as clearly "the highlighted one." And --slate-soft
+       is darkened from its default — the original #8194A6 only hits ~3:1 contrast
+       against white, which fails WCAG AA for normal-size text (needs 4.5:1); it's used
+       here for the small uppercase spec labels and badges, so it needs to be legible on
+       its own, not just decorative. */
+    --surface: #E1E4E7;
+    --surface-alt: #EEF1F5;
+    --paper: #F4F6F8;
+    --ink: #10202E;
+    --slate: #000000;
+    --slate-soft: #000000;
+    --line: #DCE2E8;
+    --amber: #96600A;
+    --amber-soft: #FBEEDA;
+    --good: #23744F;
+    --good-soft: #E4F3EC;
+    --bad: #A3342F;
+    --bad-soft: #FBE7E6;
+    z-index: 2; margin: 6px 0; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden;
+    background: var(--surface); color: var(--ink); box-shadow: 0 14px 30px -16px rgb(16 32 46 / 0.4);
+  }
+  .lot-item.expanded .lot-row { background: var(--surface); }
+  .lot-item.expanded .chevron-badge {
+    background: var(--ink); border-color: var(--ink); color: #fff; transform: rotate(180deg);
+  }
+
+  .lot-accordion {
+    display: grid; grid-template-rows: 0fr; transition: grid-template-rows 260ms ease;
+    background: var(--paper);
+  }
+  .lot-accordion.open { grid-template-rows: 1fr; background: var(--surface); }
+  .lot-accordion > div { overflow: hidden; min-height: 0; }
+  .lot-accordion .inner { padding: 22px 24px 26px; border-top: 1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { .lot-accordion { transition: none; } }
+
+  .detail-body { display: grid; grid-template-columns: 1.5fr 1fr; gap: 28px; align-items: start; }
+  /* Markup order is bid-panel, then detail-main (see the comment in detailContentHtml).
+     `.detail-body` is a grid on both desktop and mobile, so `order` applies at every
+     width — these values are scoped to desktop-and-up only (see the min-width query
+     right below) specifically so they don't leak into the mobile breakpoint and put
+     detail-main back in front there, undoing the whole point of the DOM reorder. */
+  @media (min-width: 861px) {
+    .detail-main { order: 1; }
+    .bid-panel { order: 2; }
+  }
+  .detail-main .sub { color: var(--slate); font-size: 13px; margin-top: 4px; }
+  .detail-photo { height: 170px; border-radius: 8px; margin-bottom: 16px; }
+  .spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; margin: 16px 0; }
+  .spec-grid div { font-size: 13px; }
+  .spec-grid dt { color: var(--slate-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .spec-grid dd { margin: 0; font-weight: 600; }
+  .block-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-soft); margin: 16px 0 8px; }
+  .damage-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .damage-list li { font-size: 13.5px; display: flex; gap: 8px; align-items: flex-start; }
+  .damage-list li::before { content: "•"; color: var(--amber); font-weight: 900; }
+  .condition-text { font-size: 13.5px; color: var(--ink); line-height: 1.6; margin: 0; }
+
+  .bid-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px;
+  }
+  .bid-panel .current { font-size: 26px; font-weight: 800; }
+  .bid-panel .current-label { font-size: 11px; text-transform: uppercase; color: var(--slate-soft); letter-spacing: 0.05em; }
+  .bid-panel .meta-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--slate); margin: 10px 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .bid-panel .bid-form { display: flex; gap: 8px; margin-top: 14px; }
+  .bid-panel .bid-form input {
+    flex: 1; border: 1px solid var(--line); border-radius: 7px; padding: 10px; font-size: 15px; font-weight: 700; color: var(--ink); background: var(--surface-alt);
+  }
+  .bid-panel .msg { font-size: 12px; margin-top: 8px; min-height: 16px; }
+  .bid-panel .msg.err { color: var(--bad); }
+  .bid-panel .msg.ok { color: var(--good); }
+
+  @media (max-width: 860px) {
+    .body .container { grid-template-columns: 1fr; }
+    .filters { position: static; border-right: none; border-bottom: 1px solid var(--line); }
+
+    /* The previous version of this rule only gave two of the row's six children a
+       grid-area (photo, chevron) — the title block, both spec groups, and the bid column
+       had nowhere assigned to go, so the grid's auto-placement fell back to stacking them
+       into whatever cells were left, overlapping the named regions. Every child now has
+       an explicit area; the two spec groups and the bid column each get a full-width row
+       of their own instead of trying to cram into a narrow desktop-style column. */
+    .lot-row {
+      grid-template-columns: 56px 1fr 24px;
+      grid-template-areas:
+        "photo title chev"
+        "specs1 specs1 specs1"
+        "specs2 specs2 specs2"
+        "bid bid bid";
+      row-gap: 8px;
+      padding: 14px 16px;
+    }
+    .lot-row .photo-ph { grid-area: photo; width: 56px; height: 44px; }
+    .lot-row .lot-title { grid-area: title; }
+    .lot-row .toggle { grid-area: chev; align-self: start; }
+    .lot-row .toggle .label-text { display: none; }
+    .lot-row .specs-vehicle,
+    .lot-row .specs-listing {
+      flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+    }
+    .lot-row .specs-vehicle span:not(:first-child)::before,
+    .lot-row .specs-listing span:not(:first-child)::before { content: "· "; }
+    .lot-row .specs-vehicle { grid-area: specs1; }
+    .lot-row .specs-listing { grid-area: specs2; }
+    .lot-row .bid-col {
+      grid-area: bid; text-align: left; display: flex; align-items: baseline; flex-wrap: wrap;
+      gap: 4px 10px; padding-top: 8px; border-top: 1px solid var(--line);
+    }
+
+    .detail-body { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="statusbar">
+  <span class="tag">Design Review</span>
+  <span class="caption"><strong>Option A selected.</strong> Now refining the detail + bid interaction: click a lot to expand it inline (accordion) instead of opening a modal. Click it again, or open another lot, to collapse it.</span>
+</div>
+
+<div class="concept-note"><strong>Auction Floor + inline accordion.</strong> The row stays in place and expands downward with full detail and a bid form — no overlay, no lost context in the list. Only one lot is expanded at a time.</div>
+
+<header class="site-header">
+  <div class="container">
+    <div class="wordmark">THE BLOCK <span class="chip">BUYER</span></div>
+    <nav class="site-nav"><a href="#">Inventory</a><a href="#">Watchlist</a><a href="#">How Bidding Works</a></nav>
+    <div class="header-search"><span aria-hidden="true">🔍</span><input placeholder="Search make, model, VIN, lot #" aria-label="Search inventory" /></div>
+    <div class="header-actions"><button class="btn btn-cta">Sign In</button><button class="btn btn-primary">Register to Bid</button></div>
+  </div>
+</header>
+
+<div class="body">
+ <div class="container">
+  <aside class="filters">
+    <div>
+      <h3>Filter Inventory</h3>
+      <div class="field"><label for="filter-make">Make</label><select id="filter-make"><option>All Makes</option><option>Toyota</option><option>Ford</option><option>Tesla</option></select></div>
+      <div class="field"><label for="filter-body">Body Style</label><select id="filter-body"><option>All Types</option><option>SUV</option><option>Sedan</option><option>Truck</option></select></div>
+      <div class="field"><span class="field-label" id="price-range-label">Price Range</span><div class="range" role="group" aria-labelledby="price-range-label"><input type="number" placeholder="Min" aria-label="Minimum price" /><span aria-hidden="true">–</span><input type="number" placeholder="Max" aria-label="Maximum price" /></div></div>
+    </div>
+    <div>
+      <h3>Title Status</h3>
+      <label class="check"><input type="checkbox" checked /> Clean</label>
+      <label class="check"><input type="checkbox" /> Rebuilt</label>
+      <label class="check"><input type="checkbox" /> Salvage</label>
+    </div>
+  </aside>
+  <div>
+    <div class="listing-toolbar">
+      <div class="toolbar-info">
+        <span id="a-count">12 lots</span>
+        <span aria-hidden="true">·</span>
+        <span>Showing all provinces</span>
+      </div>
+      <div class="sort-control">
+        <label for="sort-select">Sort by</label>
+        <select id="sort-select"><option>Ending Soonest</option><option>Price: Low to High</option><option>Price: High to Low</option><option>Newest Year</option></select>
+      </div>
+    </div>
+    <div id="a-rows"></div>
+  </div>
+ </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 The Block. A buyer marketplace concept for the OPENLANE challenge.</span>
+    <div class="footer-links"><a href="#">About</a><a href="#">Support</a><a href="#">Terms</a><a href="#">Privacy</a></div>
+  </div>
+</footer>
+
+<script>
+  // ---- Sample data: pulled from the real data/vehicles.json shape, not lorem ipsum ----
+  const vehicles = [
+    { year:2025, make:"Mazda", model:"CX-5", trim:"Turbo", body:"SUV", odometer:24534, transmission:"Automatic", drivetrain:"FWD", fuel:"Gasoline", grade:4.0, titleStatus:"clean", city:"Mississauga", province:"Ontario", lot:"A-0001", vin:"CG2UAF4T8LRBBVWJY", dealer:"Highway 7 Auto Sales", startingBid:20500, reserve:29000, buyNow:null, currentBid:21000, bidCount:11, timeLabel:"Ends in 4h", live:true, minutesToEvent:240, photos:4, report:"Very clean vehicle inside and out. Minor cosmetic wear only. All electronics and features fully functional.", damage:[] },
+    { year:2019, make:"Chevrolet", model:"Equinox", trim:"LS", body:"SUV", odometer:126793, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:2.7, titleStatus:"clean", city:"London", province:"Ontario", lot:"A-0002", vin:"D9V7RWMW31KR4Z96R", dealer:"Golden Horseshoe Motors", startingBid:9500, reserve:null, buyNow:null, currentBid:12500, bidCount:13, timeLabel:"Ends in 1d 2h", live:true, minutesToEvent:1560, photos:6, report:"Rough condition with notable damage. Suitable for buyer comfortable with repairs. Core mechanical systems operational.", damage:["Curb rash on front-right wheel","Minor scratches on front bumper"] },
+    { year:2021, make:"BMW", model:"3 Series", trim:"330i xDrive", body:"Sedan", odometer:69042, transmission:"Automatic", drivetrain:"RWD", fuel:"Gasoline", grade:1.7, titleStatus:"salvage", city:"Kelowna", province:"British Columbia", lot:"A-0006", vin:"FCDBJZZV9APMK4UG8", dealer:"Westcoast Auto Sales", startingBid:10500, reserve:14500, buyNow:null, currentBid:null, bidCount:0, timeLabel:"Starts in 6h", live:false, minutesToEvent:360, photos:5, report:"Vehicle has substantial damage. Sold as-is. Recommended for parts or significant rebuild only.", damage:["Transmission slips between 2nd and 3rd gear","Water damage to rear cargo area carpet","Worn brake rotors - due for replacement","Small dent on driver-side door","Dent on rear quarter panel","Paint touch-up on hood (rock chips)"] },
+    { year:2020, make:"Jeep", model:"Grand Cherokee", trim:"Overland", body:"SUV", odometer:60344, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:2.1, titleStatus:"rebuilt", city:"Windsor", province:"Ontario", lot:"A-0008", vin:"0UTWD2Z71BBMHH9W4", dealer:"Maple Motors", startingBid:15000, reserve:18000, buyNow:null, currentBid:15500, bidCount:9, timeLabel:"Ends in 18h", live:true, minutesToEvent:1080, photos:4, report:"Rough condition with notable damage. Suitable for buyer comfortable with repairs. Core mechanical systems operational.", damage:["Scratch on liftgate","Curb rash on front-right wheel","Minor scratches on front bumper","Light hail damage on roof","Paint peeling on roof rack"] },
+    { year:2023, make:"Ram", model:"1500", trim:"Laramie", body:"Truck", odometer:58993, transmission:"CVT", drivetrain:"4WD", fuel:"Gasoline", grade:3.8, titleStatus:"clean", city:"Surrey", province:"British Columbia", lot:"A-0004", vin:"73RF5U464EX3GNV9T", dealer:"Fraser Valley Auto Group", startingBid:26500, reserve:41000, buyNow:51500, currentBid:34000, bidCount:9, timeLabel:"Ends in 3h", live:true, minutesToEvent:180, photos:5, report:"Fair condition overall. Interior has some wear but no major damage. A few exterior blemishes. Drives well.", damage:["Light hail damage on roof"] },
+    { year:2022, make:"Tesla", model:"Model S", trim:"Long Range", body:"Sedan", odometer:63473, transmission:"Single-Speed", drivetrain:"RWD", fuel:"Electric", grade:3.1, titleStatus:"clean", city:"Halifax", province:"Nova Scotia", lot:"C-0007", vin:"8204NEZY776LSCJNW", dealer:"Harbourfront Motors", startingBid:45000, reserve:null, buyNow:null, currentBid:77000, bidCount:14, timeLabel:"Live · ends in 45m", live:true, minutesToEvent:45, photos:5, report:"Average condition. Has some visible wear on high-touch surfaces. Engine and transmission perform within normal parameters.", damage:["Paint touch-up on hood (rock chips)","Damaged mud flap (rear left)","Chip in windshield (passenger side)"] },
+    { year:2024, make:"Tesla", model:"Model 3", trim:"Long Range", body:"Sedan", odometer:29593, transmission:"Single-Speed", drivetrain:"AWD", fuel:"Electric", grade:4.3, titleStatus:"clean", city:"Ottawa", province:"Ontario", lot:"A-0009", vin:"7U1B8WKB302J5SGYT", dealer:"Parkway Ford", startingBid:27000, reserve:null, buyNow:null, currentBid:47000, bidCount:12, timeLabel:"Ends in 2d", live:true, minutesToEvent:2880, photos:3, report:"Above-average condition for year and mileage. All mechanical systems functioning properly. Recently serviced with new tires.", damage:[] },
+    { year:2020, make:"Kia", model:"Sportage", trim:"SX", body:"SUV", odometer:150074, transmission:"Automatic", drivetrain:"AWD", fuel:"Hybrid", grade:2.8, titleStatus:"clean", city:"Sherbrooke", province:"Quebec", lot:"A-0011", vin:"FC9BT5Z234R7YJFN0", dealer:"Laurentian Auto Group", startingBid:15000, reserve:null, buyNow:null, currentBid:null, bidCount:0, timeLabel:"Starts tomorrow", live:false, minutesToEvent:1200, photos:4, report:"Below-average condition. Visible damage present. May require immediate maintenance to address noted issues.", damage:["Small dent on driver-side door","Scuff marks on door sill plates","Small tear in rear seat upholstery","Paint peeling on roof rack","Faded headlight lenses"] },
+    { year:2018, make:"Ram", model:"1500", trim:"Laramie", body:"Truck", odometer:98107, transmission:"Automatic", drivetrain:"4WD", fuel:"Gasoline", grade:2.8, titleStatus:"clean", city:"Kitchener", province:"Ontario", lot:"A-0016", vin:"VCX5G4H94PAPBNSPA", dealer:"Durham Auto Exchange", startingBid:14500, reserve:null, buyNow:null, currentBid:18000, bidCount:18, timeLabel:"Ends in 6h", live:true, minutesToEvent:360, photos:4, report:"Below-average condition. Visible damage present. May require immediate maintenance to address noted issues.", damage:["Check engine light - catalytic converter code","Scratch on liftgate","Worn leather on driver seat bolster"] },
+    { year:2023, make:"Nissan", model:"Pathfinder", trim:"Rock Creek", body:"SUV", odometer:48161, transmission:"CVT", drivetrain:"AWD", fuel:"Gasoline", grade:4.3, titleStatus:"clean", city:"Airdrie", province:"Alberta", lot:"A-0023", vin:"NG1GZH2K0EG88ML61", dealer:"Stampede Auto Exchange", startingBid:18000, reserve:null, buyNow:null, currentBid:null, bidCount:0, timeLabel:"Starts in 2d", live:false, minutesToEvent:2880, photos:4, report:"Above-average condition for year and mileage. All mechanical systems functioning properly. Recently serviced with new tires.", damage:[] },
+    { year:2022, make:"Subaru", model:"WRX", trim:"Premium", body:"Sedan", odometer:76229, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:3.7, titleStatus:"clean", city:"Windsor", province:"Ontario", lot:"A-0034", vin:"XCKUDEG41F1RLBWY0", dealer:"Maple Motors", startingBid:11500, reserve:null, buyNow:null, currentBid:null, bidCount:0, timeLabel:"Starts in 1d", live:false, minutesToEvent:1440, photos:4, report:"Reasonable condition with expected wear. Would benefit from detailing. No major mechanical concerns identified.", damage:["Crack in rear taillight housing","Paint peeling on roof rack","Dent on tailgate"] },
+    { year:2025, make:"Mazda", model:"CX-5", trim:"Carbon Edition", body:"SUV", odometer:23295, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:4.4, titleStatus:"clean", city:"London", province:"Ontario", lot:"A-0042", vin:"4CJYUZS54GRG9BXZZ", dealer:"AutoPark Toronto", startingBid:23000, reserve:null, buyNow:null, currentBid:null, bidCount:0, timeLabel:"Starts in 3d", live:false, minutesToEvent:4320, photos:4, report:"Exceptional condition. Single previous owner. Garage kept. No mechanical issues reported.", damage:[] },
+  ];
+
+  const money = (n) => n == null ? "—" : "$" + n.toLocaleString("en-CA");
+  const km = (n) => n.toLocaleString("en-CA") + " km";
+
+  function conditionTier(grade) {
+    if (grade >= 4.0) return { label: "Excellent", tone: "good" };
+    if (grade >= 3.0) return { label: "Good", tone: "good" };
+    if (grade >= 2.0) return { label: "Fair", tone: "warn" };
+    return { label: "Poor", tone: "bad" };
+  }
+  function titleMeta(status) {
+    if (status === "clean") return { label: "Clean Title", tone: "good" };
+    if (status === "rebuilt") return { label: "Rebuilt Title", tone: "warn" };
+    return { label: "Salvage Title", tone: "bad" };
+  }
+  function reserveMeta(v) {
+    if (v.reserve == null) return { label: "No Reserve", tone: "neutral" };
+    if (v.currentBid != null && v.currentBid >= v.reserve) return { label: "Reserve Met", tone: "good" };
+    return { label: "Reserve Not Met", tone: "neutral" };
+  }
+  function nextMinBid(v) {
+    return (v.currentBid ?? v.startingBid) + 500;
+  }
+  function photoPh(v, sizeClass) {
+    return `<div class="photo-ph ${sizeClass || ''}">
+      <span>${v.year} ${v.make} ${v.model}</span>
+      <span class="count" aria-label="${v.photos} photos"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3H9zm3 15a5 5 0 110-10 5 5 0 010 10z"/></svg><span aria-hidden="true">${v.photos}</span></span>
+    </div>`;
+  }
+  function pill(meta) { return `<span class="pill pill-${meta.tone}">${meta.label}</span>`; }
+
+  function detailContentHtml(v, i) {
+    const min = nextMinBid(v);
+    // bid-panel is deliberately markup-first, detail-main second — the opposite of the
+    // desktop visual order (main on the left, bid-panel on the right). Desktop restores
+    // its own order explicitly via CSS `order` below, which means mobile's natural,
+    // un-overridden stacking order already puts price/bid first without needing a
+    // mobile-only override — the more accessible way to get "price at the top on mobile"
+    // without a visual/reading-order mismatch on the viewport where it matters most.
+    return `
+      <div class="detail-body">
+        <div class="bid-panel" data-i="${i}">
+          <div class="current-label">${v.currentBid != null ? "Current Bid" : "Starting Bid"}</div>
+          <div class="current mono">${money(v.currentBid ?? v.startingBid)}</div>
+          <div class="meta-row"><span>${v.bidCount} bids</span><span>${v.timeLabel}</span></div>
+          ${v.buyNow ? `<div class="meta-row" style="border-top:none;"><span>Buy It Now</span><span class="mono">${money(v.buyNow)}</span></div>` : ""}
+          <div class="bid-form">
+            <input type="number" class="bid-input" min="${min}" step="500" value="${min}" aria-label="Bid amount in dollars" />
+            <button class="btn btn-primary bid-submit">Place Bid</button>
+          </div>
+          <div class="msg" role="status" aria-live="polite"></div>
+        </div>
+        <div class="detail-main">
+          ${photoPh(v, "detail-photo")}
+          <div class="badges">${pill(titleMeta(v.titleStatus))}${pill(conditionTier(v.grade))}${pill(reserveMeta(v))}</div>
+          <div class="sub mono">VIN ${v.vin} · ${v.dealer} · ${v.city}, ${v.province}</div>
+          <dl class="spec-grid">
+            <div><dt>Odometer</dt><dd>${km(v.odometer)}</dd></div>
+            <div><dt>Fuel Type</dt><dd>${v.fuel}</dd></div>
+            <div><dt>Transmission</dt><dd>${v.transmission}</dd></div>
+            <div><dt>Drivetrain</dt><dd>${v.drivetrain}</dd></div>
+            <div><dt>Body Style</dt><dd>${v.body}</dd></div>
+            <div><dt>Condition Grade</dt><dd>${v.grade.toFixed(1)} / 5.0</dd></div>
+          </dl>
+          <div class="block-title">Condition Report</div>
+          <p class="condition-text">${v.report}</p>
+          <div class="block-title">Damage Notes</div>
+          ${v.damage.length ? `<ul class="damage-list">${v.damage.map(d => `<li>${d}</li>`).join("")}</ul>` : `<p class="condition-text">No damage reported.</p>`}
+        </div>
+      </div>
+    `;
+  }
+
+  // ---------------- render + accordion state ----------------
+  let expandedIndex = null;
+
+  // Ending-soonest-first: live auctions sort by time-until-end (ascending); auctions that
+  // haven't started yet come after every live one (they aren't "ending soon" by
+  // definition) and sort among themselves by time-until-start. In the real app this
+  // would derive from actual `auction_start` timestamps normalized against "now" (per
+  // the challenge README) rather than the fabricated `minutesToEvent` field used here.
+  function orderedVehicles() {
+    return vehicles
+      .map((v, i) => ({ v, i }))
+      .sort((a, b) => {
+        if (a.v.live !== b.v.live) return a.v.live ? -1 : 1;
+        return a.v.minutesToEvent - b.v.minutesToEvent;
+      });
+  }
+
+  function rowsHtml() {
+    return orderedVehicles().map(({ v, i }) => {
+      const isOpen = i === expandedIndex;
+      return `
+      <div class="lot-item ${isOpen ? 'expanded' : ''}">
+        <button class="lot-row" data-i="${i}" aria-expanded="${isOpen}">
+          ${photoPh(v)}
+          <div class="lot-title">
+            <div class="title">${v.year} ${v.make} ${v.model} ${v.trim}</div>
+            <div class="sub mono">Lot ${v.lot} · VIN ${v.vin.slice(0,8)}… · ${v.city}, ${v.province}</div>
+            <div class="badges">${pill(titleMeta(v.titleStatus))}${pill(conditionTier(v.grade))}</div>
+          </div>
+          <div class="specs specs-vehicle">
+            <span>${km(v.odometer)}</span>
+            <span>${v.transmission} · ${v.drivetrain}</span>
+            <span>${v.fuel}</span>
+          </div>
+          <div class="specs specs-listing">
+            <span>${v.dealer}</span>
+            <span>${pill(reserveMeta(v))}</span>
+          </div>
+          <div class="bid-col">
+            <div class="bid-amt mono">${money(v.currentBid ?? v.startingBid)}</div>
+            <div class="bid-meta">${v.currentBid != null ? v.bidCount + " bids" : "Starting bid"}</div>
+            <div class="bid-meta" style="color:var(--amber); font-weight:700;">${v.timeLabel}</div>
+          </div>
+          <span class="toggle">
+            <span class="label-text">${isOpen ? 'Hide' : 'Details'}</span>
+            <span class="chevron-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+          </span>
+        </button>
+        <div class="lot-accordion ${isOpen ? 'open' : ''}"><div><div class="inner">${isOpen ? detailContentHtml(v, i) : ''}</div></div></div>
+      </div>
+    `;
+    }).join("");
+  }
+
+  function renderAll() {
+    document.getElementById("a-rows").innerHTML = rowsHtml();
+    document.getElementById("a-count").textContent = vehicles.length + " lots";
+    wireBidPanels();
+    wireRowClicks();
+  }
+
+  function wireBidPanels() {
+    document.querySelectorAll(".bid-panel").forEach((panel) => {
+      const i = Number(panel.dataset.i);
+      const input = panel.querySelector(".bid-input");
+      const btn = panel.querySelector(".bid-submit");
+      const msg = panel.querySelector(".msg");
+      btn.onclick = () => {
+        const v = vehicles[i];
+        const amount = Number(input.value);
+        const min = nextMinBid(v);
+        if (!amount || amount < min) {
+          msg.textContent = `Enter at least ${money(min)}.`;
+          msg.className = "msg err";
+          return;
+        }
+        v.currentBid = amount;
+        v.bidCount += 1;
+        msg.textContent = `Bid placed at ${money(amount)}.`;
+        msg.className = "msg ok";
+        renderAll();
+      };
+    });
+  }
+
+  function wireRowClicks() {
+    document.querySelectorAll(".lot-row").forEach((el) => {
+      el.onclick = () => {
+        const i = Number(el.dataset.i);
+        expandedIndex = expandedIndex === i ? null : i;
+        renderAll();
+      };
+    });
+  }
+
+  renderAll();
+</script>

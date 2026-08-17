@@ -1,0 +1,65 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.currentLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--slate-soft);
+  letter-spacing: 0.05em;
+}
+
+.current {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--slate);
+  margin: 10px 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.metaRow.noTop {
+  border-top: none;
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface-alt);
+}
+
+.msg {
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 16px;
+}
+
+.err {
+  color: var(--bad);
+}
+
+.ok {
+  color: var(--good);
+}

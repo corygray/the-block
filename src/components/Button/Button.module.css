@@ -1,0 +1,48 @@
+.btn {
+  border-radius: 7px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* A filled button needs to invert against whatever the page background is, and
+   --ink/--paper already do that by construction (each theme defines them as an opposite
+   pair), so this pairing pops correctly in both light and dark mode without a fixed
+   color or a special case for either theme. */
+.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.primary:hover {
+  filter: brightness(0.85);
+}
+
+.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.ghost:hover {
+  border-color: var(--slate-soft);
+}
+
+/* Fixed green (not a theme token) — checked contrast before picking it: white text
+   against a theme-flipping green's dark-mode value can fall well under the 4.5:1 floor.
+   #1B7A4D keeps white text at roughly 5.3:1 in both light and dark mode. */
+.cta {
+  background: #1b7a4d;
+  color: #ffffff;
+}
+
+.cta:hover {
+  background: #145f3c;
+}

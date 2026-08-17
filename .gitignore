@@ -4,3 +4,21 @@ node_modules/
 .DS_Store
 *.log
 *.bak
+
+# Personal working notes, not for the repo
+PROGRESS.md
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

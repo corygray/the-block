@@ -1,0 +1,39 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.warn {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+/* pill-good/warn/bad don't need a border — their tinted backgrounds are hue-distinct from
+   any grey row background they might sit on. Neutral is the exception: its background is
+   the same token as the row striping, so on an even row the fill can coincidentally match
+   its surroundings and the badge disappears. A border makes it read as a shape regardless
+   of what's behind it. Padding is trimmed by the border width so its footprint still
+   matches its borderless siblings when they sit together. */
+.neutral {
+  background: var(--surface-alt);
+  color: var(--slate);
+  border: 1px solid var(--slate-soft);
+  padding: 2px 7px;
+}

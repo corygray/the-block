@@ -1,0 +1,91 @@
+/* Design tokens — ported directly from the vetted mockup (design/inventory-listing-mockup.html).
+   See BUILD_LOG.md for why each of these values is what it is (several were changed
+   specifically to fix real contrast failures, not just for taste). */
+:root {
+  --paper: #F4F6F8;
+  --surface: #FFFFFF;
+  --surface-alt: #EEF1F5;
+  --ink: #10202E;
+  --slate: #55697D;
+  --slate-soft: #5A6E82;
+  --line: #DCE2E8;
+  --amber: #96600A;
+  --amber-soft: #FBEEDA;
+  --good: #23744F;
+  --good-soft: #E4F3EC;
+  --bad: #A3342F;
+  --bad-soft: #FBE7E6;
+  --shadow: 0 8px 24px -12px rgb(16 32 46 / 0.25);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0B1420;
+    --surface: #121D2C;
+    --surface-alt: #16233A;
+    --ink: #EAF0F6;
+    --slate: #9FB1C4;
+    --slate-soft: #728AA1;
+    --line: #263A4E;
+    --amber: #E0A23D;
+    --amber-soft: #34270F;
+    --good: #57B78C;
+    --good-soft: #163425;
+    --bad: #E27A75;
+    --bad-soft: #3A1B1B;
+    --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0B1420;
+  --surface: #121D2C;
+  --surface-alt: #16233A;
+  --ink: #EAF0F6;
+  --slate: #9FB1C4;
+  --slate-soft: #728AA1;
+  --line: #263A4E;
+  --amber: #E0A23D;
+  --amber-soft: #34270F;
+  --good: #57B78C;
+  --good-soft: #163425;
+  --bad: #E27A75;
+  --bad-soft: #3A1B1B;
+  --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+/* VIN, lot numbers, odometer, bid figures — anything meant to read like auction
+   paperwork gets this, with tabular-nums so digits line up in columns. */
+.mono {
+  font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
