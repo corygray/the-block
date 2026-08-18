@@ -62,6 +62,44 @@ aren't module-scoped, they're meant to cascade everywhere. Each component's `.mo
 then references them (`color: var(--ink)`) rather than hardcoding values, so a component's
 *layout* is scoped to itself but its *colors* still come from one shared source of truth.
 
+## oxlint
+
+**What it is:** A linter — a tool that reads your code without running it and flags
+patterns that are likely bugs (not just style nitpicks). It came bundled with the Vite
+scaffold as the default (`npm run lint`).
+
+**Why we kept it:** It's a Rust-based, much faster alternative to the more common
+ESLint, and includes React-specific rules out of the box — e.g. the
+`react-hooks/exhaustive-deps` rule, which checks that a `useEffect`'s dependency array
+actually lists everything the effect reads. It caught a real one in `BidPanel`: an effect
+that reads `vehicle` but only listed two of its fields as dependencies — technically fine
+in this app today (the object only ever changes as a whole, via a bid update), but the
+kind of thing that quietly turns into a real bug later if the component's logic changes
+and nobody remembers the effect was relying on an assumption the dependency array didn't
+actually enforce.
+
+## Playwright
+
+**What it is:** A tool that drives a real (headless) browser programmatically — it can
+load a page, click things, type into fields, and take screenshots, all from a script.
+
+**Why we used it:** Not part of the app itself — it's a verification tool, installed
+separately (in a scratch folder, not as a project dependency) purely to check that the
+app actually works. Checking that the dev server returns HTTP 200 only proves the page
+*loads*; it says nothing about whether clicking a row actually expands it, or whether
+placing a bid actually updates the screen. Playwright let us script exactly that: load the
+page, click a vehicle row, confirm the bid form appears, place a bid, confirm the
+confirmation message shows up, resize to a phone-sized viewport, and check the browser
+console for errors the whole time. This is the kind of check that catches the difference
+between "the code compiles" and "the feature actually works."
+
+**A lesson from using it:** a screenshot taken right after expanding a row looked broken —
+it showed the row's "expanded" styling but none of the detail content underneath. Before
+assuming that meant a bug, we scrolled to the element and took a full-page screenshot
+instead, which showed the content was there all along — it had just been pushed below the
+visible browser window by the newly-expanded accordion. A cropped screenshot right after
+a layout change is a common false alarm, not proof of a real bug.
+
 ## Application State (Bids)
 
 **What it is:** Where the app keeps track of "what's true right now" — in this case,

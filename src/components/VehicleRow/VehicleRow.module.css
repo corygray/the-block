@@ -1,0 +1,268 @@
+.lotItem {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+}
+
+.lotItem:nth-child(even) .lotRow {
+  background: var(--surface-alt);
+}
+
+.lotRow {
+  display: grid;
+  grid-template-columns: 96px 1.6fr 1fr 1fr 0.9fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 20px;
+  cursor: pointer;
+  background: var(--surface);
+  border: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+/* Without this, keyboard focus falls back to the browser's default UA outline, which
+   would quietly reintroduce a color we don't control and can't guarantee is legible
+   against every row background. */
+.lotRow:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+/* Hover matches the expanded card's own background (#E1E4E7) rather than the zebra
+   stripe color, and is scoped as `.lotItem .lotRow:hover` (not just `.lotRow:hover`) so
+   it's specific enough to beat the even-row zebra rule above on every row, not just odd
+   ones. Text tokens are pinned dark here too — `--ink`/`--slate`/`--slate-soft` are light
+   in dark mode (built for light text on a dark row), so only changing the background
+   would leave dark-mode users with light text on a now-light background. */
+.lotItem .lotRow:hover {
+  background: #e1e4e7;
+  --ink: #10202e;
+  --slate: #000000;
+  --slate-soft: #000000;
+  color: var(--ink);
+}
+
+/* pill-neutral's own background is the same token as the row striping, so it wasn't
+   reacting to hover at all. Flips to a dark-bg/light-text pairing on hover instead of
+   trying to match the hover background directly — that pairing would be ~1.1:1 contrast
+   against the pill's unchanged light background, effectively invisible.
+   Targets Pill's `data-tone` attribute rather than its class name — CSS Modules hash
+   class names per-file, so `.neutral` from Pill.module.css isn't reachable here. */
+.lotItem .lotRow:hover [data-tone="neutral"] {
+  background: #10202e;
+  color: #e1e4e7;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.subLine {
+  font-size: 12.5px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.specs {
+  font-size: 12px;
+  color: var(--slate);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bidCol {
+  text-align: right;
+}
+
+.bidAmount {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.bidMeta {
+  font-size: 11.5px;
+  color: var(--slate);
+}
+
+.timing {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.chevronBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--slate-soft);
+  color: var(--slate);
+  flex-shrink: 0;
+  transition:
+    transform 200ms ease,
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.chevronBadge svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Expanded state reads by contrast and shape (a solid dark border + real elevation), not
+   color alone, and re-declares the color tokens to their light-mode values so this card
+   stays a literal off-white surface with readable dark text regardless of the page's
+   active theme — the same "pin it" technique used nowhere else in this file except here
+   and the hover rule above, both deliberately, since both create a fixed-appearance
+   surface independent of the ambient theme. */
+.lotItem.expanded {
+  --surface: #e1e4e7;
+  --surface-alt: #eef1f5;
+  --paper: #f4f6f8;
+  --ink: #10202e;
+  --slate: #000000;
+  --slate-soft: #000000;
+  --line: #dce2e8;
+  --amber: #96600a;
+  --amber-soft: #fbeeda;
+  --good: #23744f;
+  --good-soft: #e4f3ec;
+  --bad: #a3342f;
+  --bad-soft: #fbe7e6;
+  z-index: 2;
+  margin: 6px 0;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 14px 30px -16px rgb(16 32 46 / 0.4);
+}
+
+.lotItem.expanded .lotRow {
+  background: var(--surface);
+}
+
+.lotItem.expanded .chevronBadge {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+  transform: rotate(180deg);
+}
+
+.accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms ease;
+  background: var(--paper);
+}
+
+.accordion.open {
+  grid-template-rows: 1fr;
+  background: var(--surface);
+}
+
+.accordion > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.inner {
+  padding: 22px 24px 26px;
+  border-top: 1px solid var(--line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion {
+    transition: none;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Every child gets an explicit grid-area here — a version of this rule that only
+     assigned two of the row's six children (photo, chevron) shipped once and quietly
+     overlapped content instead of listing it, since CSS Grid's auto-placement doesn't
+     know where to put items with no assigned area. See BUILD_LOG.md. */
+  .lotRow {
+    grid-template-columns: 56px 1fr 24px;
+    grid-template-areas:
+      "photo title chev"
+      "specs1 specs1 specs1"
+      "specs2 specs2 specs2"
+      "bid bid bid";
+    row-gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .photoArea {
+    grid-area: photo;
+  }
+
+  .titleArea {
+    grid-area: title;
+  }
+
+  .toggle {
+    grid-area: chev;
+    align-self: start;
+  }
+
+  .toggleLabel {
+    display: none;
+  }
+
+  .specsVehicle,
+  .specsListing {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+  }
+
+  .specsVehicle span:not(:first-child)::before,
+  .specsListing span:not(:first-child)::before {
+    content: "· ";
+  }
+
+  .specsVehicle {
+    grid-area: specs1;
+  }
+
+  .specsListing {
+    grid-area: specs2;
+  }
+
+  .bidCol {
+    grid-area: bid;
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+}

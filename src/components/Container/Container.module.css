@@ -1,0 +1,7 @@
+/* Keeps the actual content capped at a readable width and centered, while its parent
+   (header/body/footer) stays full-bleed for its own background/border. */
+.container {
+  max-width: 1920px;
+  width: 100%;
+  margin: 0 auto;
+}

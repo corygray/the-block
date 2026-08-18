@@ -11,6 +11,12 @@ export function formatMoney(amount: number | null): string {
   return amount == null ? "—" : `$${amount.toLocaleString("en-CA")}`;
 }
 
+// What a vehicle is "worth right now" for filtering/sorting purposes — the current bid
+// if there is one, otherwise the starting bid.
+export function effectivePrice(vehicle: Vehicle): number {
+  return vehicle.current_bid ?? vehicle.starting_bid;
+}
+
 export function formatKm(km: number): string {
   return `${km.toLocaleString("en-CA")} km`;
 }

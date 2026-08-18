@@ -1,0 +1,102 @@
+.filters {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 84px;
+}
+
+@media (max-width: 860px) {
+  .filters {
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+.filters h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-soft);
+  margin-bottom: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.field label,
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.field select,
+.field input[type="number"] {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.range {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Number inputs have a browser-default intrinsic width that flexbox won't shrink on its
+   own (they ignore flex-basis/percentage sizing unless min-width is reset), which is why
+   the two Min/Max fields would otherwise push past the sidebar's edge. flex + min-width:0
+   force them to actually share the row's available space; the spin-button removal
+   reclaims a bit more width for the digits. */
+.range input[type="number"] {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  padding: 7px 6px;
+  -moz-appearance: textfield;
+}
+
+.range input[type="number"]::-webkit-inner-spin-button,
+.range input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.range span {
+  flex-shrink: 0;
+  color: var(--slate-soft);
+  font-size: 12px;
+}
+
+@media (max-width: 340px) {
+  .range {
+    flex-wrap: wrap;
+  }
+  .range span {
+    display: none;
+  }
+  .range input[type="number"] {
+    flex-basis: 100%;
+  }
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}

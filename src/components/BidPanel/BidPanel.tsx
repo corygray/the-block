@@ -17,9 +17,12 @@ export function BidPanel({ vehicle, timingLabel, onPlaceBid }: Props) {
 
   // Keep the suggested next bid in step with the vehicle's current bid — after a
   // successful bid raises current_bid, the next suggested amount should raise with it.
+  // `vehicle` only ever changes identity when a bid updates it, so depending on the
+  // whole object (rather than just the two fields nextMinBid reads) is both correct and
+  // what the exhaustive-deps rule expects.
   useEffect(() => {
     setAmount(nextMinBid(vehicle));
-  }, [vehicle.current_bid, vehicle.starting_bid]);
+  }, [vehicle]);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();

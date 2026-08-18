@@ -1,0 +1,16 @@
+.body {
+  padding-top: 32px;
+}
+
+.bodyInner {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  column-gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .bodyInner {
+    grid-template-columns: 1fr;
+  }
+}

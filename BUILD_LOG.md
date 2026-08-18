@@ -665,3 +665,85 @@ and what's left, this entry covers the reasoning behind what got done.
   half-edited one, at the commit that gets pushed.
 - Dev server was started only to smoke-test, then shut down immediately per the standing
   rule — confirmed no vite process left running before moving on.
+
+## 2026-08-17 — Finished wiring up the app
+
+Picked up from `PROGRESS.md` and built out the rest of the component tree, then wired
+everything together in `App.tsx`. The app is now functionally real, not a placeholder —
+browsing, search, filtering, sorting, the accordion, and bidding all work end-to-end.
+
+- **`VehicleDetail`**: the accordion's expanded content (photo gallery, badges, VIN/dealer
+  line, spec grid, condition report, damage notes, `BidPanel`). Kept the mobile-first DOM
+  order decision from the mockup exactly: the bid panel is the *first* element returned in
+  this component's JSX, detail-main second — opposite of how they read on desktop.
+  Desktop restores the familiar left/right layout via CSS `order`, scoped to
+  `@media (min-width: 861px)` only, so mobile's natural (un-reordered) stacking is what
+  puts price first — matching what a keyboard/screen-reader user reaches first too, not
+  just what's visually on top. Ported the reasoning as a comment directly in
+  `VehicleDetail.module.css` so it doesn't get "simplified away" by mistake later.
+- **`VehicleRow`**: the collapsible row + accordion wrapper. Ported the *fixed* mobile
+  `grid-template-areas` (every one of the row's six children now has an explicit area —
+  the original mockup version only assigned two of them and silently overlapped content,
+  see the entry from earlier in this file) rather than the original broken version.
+- **Cross-component CSS bug caught before it shipped**: `VehicleRow`'s hover state needs
+  to restyle `Pill`'s neutral variant (so the "No Reserve" badge doesn't go invisible on
+  hover, same issue as the mockup). First instinct was `:global(.neutral)` in
+  `VehicleRow.module.css` — but CSS Modules hash class names per file, so `.neutral` from
+  `Pill.module.css` compiles to something like `_neutral_a1b2c`, not the literal string
+  `neutral`; a `:global()` escape doesn't make it reachable from a different module's
+  stylesheet. Fixed by adding a plain `data-tone` attribute to `Pill`'s rendered element
+  (not module-scoped, since attributes aren't touched by CSS Modules) and targeting
+  `[data-tone="neutral"]` instead — works across module boundaries by design.
+- **`Header`**, **`Footer`**, **`Container`**: mostly a direct port of the mockup's CSS.
+  Pulled the `.container` max-width/centering pattern out into its own small shared
+  component (`Container`) rather than repeating the same CSS Module rule in Header,
+  Footer, and the main body layout — one definition, three places it's used.
+  Header's search input is now a real controlled input (`value`/`onChange` wired to
+  `App`-level `filters.search`) instead of the mockup's inert placeholder.
+- **`FilterSidebar` — now functional, not decorative.** The mockup's Make/Body Style
+  dropdowns only ever had 2-3 hardcoded sample options; the real one derives the full list
+  from the actual dataset (`Array.from(new Set(vehicles.map(v => v.make)))`, sorted) so it
+  can never drift out of sync with what's actually browsable. **Title Status defaults to
+  all three checked** (Clean/Rebuilt/Salvage, i.e. show everything) — the mockup had only
+  "Clean" pre-checked, but that was just a static visual choice for a screenshot, never a
+  considered default; a first-time buyer should see the full inventory unless they
+  narrow it themselves.
+- **`ListingToolbar` — Sort is now real.** Four options (Ending Soonest, Price Low→High,
+  Price High→Low, Newest Year) actually reorder the list via `compareVehicles` in the new
+  `src/lib/sort.ts`.
+- **`src/lib/filters.ts`**: `matchesFilters(vehicle, filters)` — search matches make,
+  model, trim, VIN, and lot number (exactly what the search placeholder promises:
+  "Search make, model, VIN, lot #"), plus make/body-style/price-range/title-status
+  filtering. `effectivePrice()` (current bid if there is one, else starting bid) is
+  shared between here and `sort.ts` rather than duplicated in both.
+- **`App.tsx`** now owns all the lifted state: `vehicles` (mutable, for bids), `filters`,
+  `sortBy`, `expandedId`. `expandedId` is keyed on the vehicle's `id`, not its array
+  index or display position — filtering/sorting reorders the visible list on every
+  keystroke, and an index-based key would silently point at the wrong vehicle the moment
+  that happens. `visibleVehicles` (filtered + sorted) is derived with `useMemo`.
+  `getScheduleOffsetMs` (the auction-timing normalization) is computed once from the
+  original imported dataset, not recomputed on every render.
+- **Lint**: `oxlint` flagged a real `react-hooks/exhaustive-deps` issue in `BidPanel` — an
+  effect that reads `vehicle` but only listed two of its fields in the dependency array.
+  Functionally harmless today (the object only ever changes as a whole, via a bid
+  update), but exactly the kind of implicit assumption that turns into a real bug once
+  the component's logic changes and nobody remembers the dependency array was relying on
+  it. Fixed by depending on `vehicle` itself. Added `oxlint` to `technologies.md`.
+- **Verification, properly this time**: installed Playwright locally (not part of the
+  app's own dependencies — a throwaway verification tool) and drove the running dev
+  server headlessly rather than just checking for an HTTP 200. Script: load the page,
+  click a row, confirm the accordion's bid form appears, place a bid, confirm the
+  "Bid placed at $X" confirmation renders, resize to a mobile viewport, and check
+  `console --errors` the whole way through. Zero console errors.
+  - **A screenshot briefly looked broken and wasn't** — a non-full-page screenshot taken
+    right after expanding a row showed the row's expanded *styling* (border, "Hide" label)
+    but none of the actual accordion content below it. Before treating that as a bug,
+    scrolled the element into view and took a full-page screenshot instead: the content
+    was there all along, just pushed below the original viewport's fold once the
+    accordion opened. Worth remembering: a cropped screenshot after a layout-changing
+    interaction is a common false alarm, not a rendering bug — confirm with a full-page
+    or scrolled shot before chasing something that isn't broken. User also confirmed
+    visually in a real browser that it matches the prototype exactly.
+- Dev server was left running (at the user's request, to view it themselves) rather than
+  shut down immediately this time — noted here since that's a deviation from the usual
+  standing rule, not an oversight.

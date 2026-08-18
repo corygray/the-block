@@ -1,0 +1,87 @@
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.inner {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip {
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Underline on hover, not just a color shift — a link's hover state shouldn't rely on
+   color alone either. */
+.nav a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* flex-grow: 0 (not 1) + margin-left: auto — rather than growing to fill the row, the
+   search bar keeps a fixed-ish width and the auto margin pushes it (and everything after
+   it, i.e. the action buttons) as a group over to the right edge, so it sits snug against
+   Sign In / Register instead of floating in the middle of the header. */
+.search {
+  flex: 0 1 320px;
+  max-width: 420px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  /* Fixed white (not var(--surface), which is dark in dark mode) so the search field
+     always stands out from the header, even in dark mode where --surface-alt would be
+     nearly the same dark tone as the header behind it. */
+  background: #ffffff;
+}
+
+.search input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  /* Pinned dark to match the fixed white background above — a background that doesn't
+     flip with the theme needs text that doesn't either. */
+  color: #10202e;
+  font-size: 14px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}

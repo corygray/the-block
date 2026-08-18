@@ -1,0 +1,42 @@
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--slate);
+  background: var(--surface-alt);
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Sort lives here, in the toolbar over the results, deliberately separate from the
+   sidebar filters — filtering narrows *what's* in the list, sorting only changes the
+   *order* of whatever's already there, so they're different mental operations and
+   shouldn't share one control cluster. */
+.sortControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortControl label {
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.sortControl select {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}

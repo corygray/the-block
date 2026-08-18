@@ -1,0 +1,97 @@
+.detailBody {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Markup order is bid-panel, then detail-main (see VehicleDetail.tsx) — these two
+   `order` values put them back in the usual left/right visual arrangement on desktop.
+   Deliberately scoped to desktop-and-up only: `.detailBody` stays a grid on mobile too,
+   so an unscoped order here would silently put detail-main back in front there and undo
+   the whole point of the DOM order (price/bid info first on mobile, matching what a
+   keyboard/screen-reader user reaches first — see BUILD_LOG.md for the full reasoning
+   and the bug this fixes). */
+@media (min-width: 861px) {
+  .detailMain {
+    order: 1;
+  }
+  .bidPanel {
+    order: 2;
+  }
+}
+
+@media (max-width: 860px) {
+  .detailBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.subLine {
+  color: var(--slate);
+  font-size: 13px;
+}
+
+.specGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 20px;
+  margin: 16px 0;
+}
+
+.specGrid dt {
+  color: var(--slate-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.specGrid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.blockTitle {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-soft);
+  margin: 16px 0 8px;
+}
+
+.conditionText {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.damageList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.damageList li {
+  font-size: 13.5px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.damageList li::before {
+  content: "•";
+  color: var(--amber);
+  font-weight: 900;
+}
