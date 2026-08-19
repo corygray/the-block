@@ -32,7 +32,7 @@ Other available scripts:
 
 ## Time Spent
 
-Roughly 3-4 hours of focused work, spread across a few sessions: initial build (browsing, search, filtering, sorting, and a working bid flow), a full accessibility and color pass, and a second design round that reworked the vehicle card and detail view after living with the first version.
+Roughly 4.5 hours of focused work, spread across a few sessions: initial build (browsing, search, filtering, sorting, and a working bid flow), a full accessibility and color pass, a second design round that reworked the vehicle card and detail view after living with the first version, and a final polish pass (color/contrast refinements, a photo lightbox, a Buy It Now flow, and fixing a data-consistency issue between auction timing and bid activity).
 
 ## Assumptions and Scope
 

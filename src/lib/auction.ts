@@ -16,11 +16,21 @@ function parseAuctionStart(vehicle: Vehicle): number {
 // every auction would already be over. The README calls this out directly: normalize
 // against "now" rather than trusting the raw values. This shifts every auction_start by
 // the same fixed offset — preserving the relative spacing the generator authored (which
-// lots start close together, which are days apart) while re-anchoring the earliest one to
-// just under an hour from whenever the app loads.
+// lots start close together, which are days apart).
+//
+// The offset anchors "now" 22 hours AFTER the earliest auction's original start, not
+// before it — so the earliest lot is already live with about 2 hours left (an early
+// version anchored before everything, which meant nothing was ever live until 45+
+// minutes of real wall-clock time had passed). Every vehicle whose original start falls
+// within that same 22-hour window ends up live too, spread across the full urgency
+// range (about to end, ending soon, just started) rather than clustered at one tier —
+// roughly the first ~15% of the dataset by schedule position, comfortably enough to see
+// the live indicator without the majority of the catalog suddenly reading as live.
+const EARLIEST_STARTED_AGO_MS = 22 * 60 * 60 * 1000;
+
 export function getScheduleOffsetMs(vehicles: Vehicle[]): number {
   const earliest = Math.min(...vehicles.map(parseAuctionStart));
-  return Date.now() - earliest + 45 * 60 * 1000;
+  return Date.now() - earliest - EARLIEST_STARTED_AGO_MS;
 }
 
 export type AuctionStatus = "upcoming" | "live" | "ended";
@@ -63,6 +73,20 @@ export function formatAuctionTiming(timing: AuctionTiming): string {
   return timing.status === "live" ? `Ends in ${duration}` : `Starts in ${duration}`;
 }
 
+// The dataset's `current_bid`/`bid_count` were generated independently of `auction_start`
+// — checked directly against data/vehicles.json, and vehicles scheduled at the very end
+// of the 6.5-day spread already have bid activity, same as ones at the very start. So an
+// auction our own computed timing marks "upcoming" can still carry bid data in the raw
+// file, which reads as a real inconsistency once rendered ("Starts in 29m" next to
+// "12 bids"). This derives what a vehicle should actually display given its live computed
+// status, without mutating the underlying dataset — an auction that hasn't started yet
+// has no bids yet, full stop.
+export function withEffectiveBidState(vehicle: Vehicle, timing: AuctionTiming): Vehicle {
+  if (timing.status !== "upcoming") return vehicle;
+  if (vehicle.current_bid == null && vehicle.bid_count === 0) return vehicle;
+  return { ...vehicle, current_bid: null, bid_count: 0 };
+}
+
 export type UrgencyTier = "urgent" | "soon" | "normal" | "upcoming";
 
 // Amber is reserved strictly for "live and counting down" — a scheduled-but-not-started
@@ -76,6 +100,19 @@ export function urgencyTier(timing: AuctionTiming): UrgencyTier {
   if (hoursUntil <= 1) return "urgent";
   if (hoursUntil <= 6) return "soon";
   return "normal";
+}
+
+export type StatusDot = "live" | null;
+
+// A compact, glanceable signal for "this is happening right now," separate from the
+// amber urgency-to-end text. Deliberately just live-or-not: an earlier version also
+// marked auctions starting soon, but that reused a yellow close enough to the existing
+// --amber (urgency) hue to risk blurring two different meanings — "act now" vs. "notice
+// this later" — right where the dot's whole job is to make that distinction faster to
+// scan. Always paired with the timing text next to it, never the only signal for the
+// state (see formatAuctionTiming).
+export function auctionStatusDot(timing: AuctionTiming): StatusDot {
+  return timing.status === "live" ? "live" : null;
 }
 
 // Ending-soonest-first: live auctions sort by time-until-end (ascending); upcoming ones

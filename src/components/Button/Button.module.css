@@ -12,17 +12,19 @@
   outline-offset: 2px;
 }
 
-/* A filled button needs to invert against whatever the page background is, and
-   --ink/--paper already do that by construction (each theme defines them as an opposite
-   pair), so this pairing pops correctly in both light and dark mode without a fixed
-   color or a special case for either theme. */
+/* Bordered, not filled — a solid --ink fill here plus the wordmark chip plus the footer
+   all being solid --ink stacked into a page that read as "too dark." This is the one of
+   those three still visible on the ambient (non-pinned) page, so it keeps --ink/--surface
+   as a border/text pairing instead of a fill, which still inverts correctly in both
+   themes since --ink and --surface are each theme's dark/light member. */
 .primary {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .primary:hover {
-  filter: brightness(0.85);
+  background: var(--surface-alt);
 }
 
 .ghost {
@@ -45,4 +47,18 @@
 
 .cta:hover {
   background: #145f3c;
+}
+
+/* Buy It Now, next to Place Bid — same fixed green as .cta (both lead to acquiring the
+   vehicle, just by two different paths), but outlined instead of filled so it doesn't
+   compete with .cta for being "the" primary action. Fixed, not var(--good), for the same
+   cross-theme reason as .cta. */
+.secondary {
+  background: transparent;
+  color: #1b7a4d;
+  border-color: #1b7a4d;
+}
+
+.secondary:hover {
+  background: #e4f3ec;
 }

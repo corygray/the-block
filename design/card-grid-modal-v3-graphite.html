@@ -1,0 +1,516 @@
+<title>The Block v4 — Graphite Neutral</title>
+<style>
+  :root {
+    --paper: #FAFAF9;
+    --surface: #FFFFFF;
+    --surface-alt: #F2F1EF;
+    --ink: #262626;
+    --slate: #5B5B5B;
+    --slate-soft: #4B4B4B;
+    --line: #E2E0DC;
+    --amber: #96600A;
+    --amber-soft: #FBEEDA;
+    --good: #23744F;
+    --good-soft: #E4F3EC;
+    --bad: #A3342F;
+    --bad-soft: #FBE7E6;
+    --shadow: 0 8px 24px -12px rgb(38 38 38 / 0.15);
+    --shadow-lg: 0 24px 60px -16px rgb(38 38 38 / 0.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #18181A; --surface: #222224; --surface-alt: #2A2A2D; --ink: #F2F1EF;
+      --slate: #B0B0B0; --slate-soft: #969696; --line: #38383B; --amber: #E0A23D;
+      --amber-soft: #34270F; --good: #57B78C; --good-soft: #163425; --bad: #E27A75;
+      --bad-soft: #3A1B1B; --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+      --shadow-lg: 0 24px 60px -16px rgb(0 0 0 / 0.7); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #18181A; --surface: #222224; --surface-alt: #2A2A2D; --ink: #F2F1EF;
+    --slate: #B0B0B0; --slate-soft: #969696; --line: #38383B; --amber: #E0A23D;
+    --amber-soft: #34270F; --good: #57B78C; --good-soft: #163425; --bad: #E27A75;
+    --bad-soft: #3A1B1B; --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 24px 60px -16px rgb(0 0 0 / 0.7); color-scheme: dark;
+  }
+  * , *::before, *::after { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  button { font: inherit; }
+  .mono { font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .container { max-width: 1920px; width: 100%; margin: 0 auto; }
+
+  /* ---------- Review chrome (meta UI, not part of the product) ---------- */
+  .statusbar {
+    position: sticky; top: 0; z-index: 50; background: var(--ink); color: var(--paper);
+    padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border-bottom: 3px solid var(--amber);
+  }
+  .statusbar .tag { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; background: var(--amber); color: #241900; padding: 3px 8px; border-radius: 3px; font-weight: 700; flex-shrink: 0; }
+  .statusbar .caption { font-size: 13px; color: var(--slate-soft); }
+  .statusbar .caption strong { color: var(--paper); }
+  .brief { background: var(--surface-alt); border-bottom: 1px solid var(--line); padding: 12px 20px; font-size: 13px; color: var(--ink); }
+  .brief strong { color: var(--ink); }
+  .brief ul { margin: 6px 0 0; padding-left: 18px; }
+  .brief li { margin-bottom: 2px; }
+
+  /* ---------- Shared header/footer ----------
+     No solid near-black fills anywhere in this pass — --ink is reserved for TEXT, not
+     large surface areas. The old design used --ink as a fill for the primary button,
+     the wordmark chip, AND the footer, which stacked into a "too dark" feeling across
+     the page even though no single instance was wrong on its own. */
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .site-header .container { padding: 14px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .wordmark { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+  .wordmark .chip { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); font-size: 11px; padding: 1px 6px; border-radius: 3px; letter-spacing: .04em; }
+  .site-nav { display: flex; gap: 20px; font-size: 14px; font-weight: 600; color: var(--slate); }
+  .site-nav a { color: inherit; text-decoration: none; }
+  .site-nav a:hover { color: var(--ink); text-decoration: underline; }
+  .header-search { flex: 0 1 320px; max-width: 420px; margin-left: auto; display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+  .header-search input { border: 0; background: transparent; outline: none; color: var(--ink); font-size: 14px; width: 100%; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .btn { border-radius: 7px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
+  /* Bordered instead of solid-filled — same visual priority as before (still reads as
+     the header's second action), but doesn't add another block of dark fill next to the
+     green CTA. */
+  .btn-primary { background: var(--surface); color: var(--ink); border-color: var(--ink); }
+  .btn-primary:hover { background: var(--surface-alt); }
+  .btn-cta { background: #1B7A4D; color: #fff; }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .site-footer { background: var(--surface-alt); color: var(--slate); border-top: 1px solid var(--line); margin-top: 40px; font-size: 13px; }
+  .site-footer .container { padding: 18px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .site-footer a { color: var(--ink); text-decoration: none; opacity: .85; }
+
+  /* ---------- Shared bits ---------- */
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: .02em; white-space: nowrap; }
+  .pill-good { background: var(--good-soft); color: var(--good); }
+  .pill-warn { background: var(--amber-soft); color: var(--amber); }
+  .pill-bad { background: var(--bad-soft); color: var(--bad); }
+  .pill-neutral { background: var(--surface-alt); color: var(--slate); border: 1px solid var(--slate-soft); padding: 2px 7px; }
+
+  .photo-ph {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(135deg, var(--surface-alt), var(--surface-alt) 10px, var(--paper) 10px, var(--paper) 20px);
+    color: var(--slate-soft); font-size: 11px; font-weight: 600; text-align: center; overflow: hidden; flex-shrink: 0;
+  }
+  .photo-ph .count { position: absolute; bottom: 5px; right: 5px; background: rgb(38 38 38 / .7); color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
+
+  /* Urgency semantics: amber = a LIVE auction counting down, never used for anything
+     else. Grey = scheduled but not started (informational, not urgent). "Ending Soon"
+     gets an explicit filled badge on top of the color, not color alone. */
+  .time-normal { color: var(--amber); font-weight: 700; }
+  .time-soon { color: var(--amber); font-weight: 800; }
+  .time-urgent { color: var(--amber); font-weight: 800; }
+  .time-upcoming { color: var(--slate); font-weight: 600; }
+  /* Fixed amber (not var(--amber)) — that token is tuned for "amber as text," and its
+     dark-mode value is too bright to use as a fill under white text (~2.25:1). #96600A
+     is the token's own light-mode value, already validated at ~5.6:1 with white. */
+  .urgent-badge {
+    display: inline-flex; align-items: center; gap: 4px; background: #96600A; color: #fff;
+    font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .damage-flag { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--bad); }
+  .damage-flag svg { width: 12px; height: 12px; }
+
+  /* ---------- Filter sidebar + listing toolbar (unchanged from v1) ----------
+     The card-grid exploration only ever showed the grid in isolation — worth being
+     explicit that filtering/sorting aren't going away, just the list item underneath
+     them changed shape. Carried over directly from the v1 mockup: same markup, same
+     accessibility work (label/id associations, aria-labelledby group for Price Range,
+     the number-input overflow fix), same "sort is separate from filtering" reasoning. */
+  .body { padding-top: 32px; }
+  .body .container { display: grid; grid-template-columns: 240px 1fr; column-gap: 32px; align-items: start; }
+  @media (max-width: 860px) {
+    .body .container { grid-template-columns: 1fr; }
+    .filters { position: static; border-right: none; border-bottom: 1px solid var(--line); }
+  }
+  .filters {
+    background: var(--surface); border-right: 1px solid var(--line); padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 18px; position: sticky; top: 84px;
+  }
+  .filters h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--slate-soft); margin-bottom: 8px; }
+  .filters .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .filters label, .filters .field-label { font-size: 12.5px; font-weight: 600; color: var(--slate); }
+  .filters select, .filters input[type="number"] {
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; background: var(--surface); color: var(--ink); font-size: 13px;
+  }
+  .filters .range { display: flex; gap: 6px; align-items: center; }
+  .filters .range input[type="number"] {
+    flex: 1 1 0; min-width: 0; width: 100%; padding: 7px 6px;
+    -moz-appearance: textfield;
+  }
+  .filters .range input[type="number"]::-webkit-inner-spin-button,
+  .filters .range input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .filters .range span { flex-shrink: 0; color: var(--slate-soft); font-size: 12px; }
+  @media (max-width: 340px) {
+    .filters .range { flex-wrap: wrap; }
+    .filters .range span { display: none; }
+    .filters .range input[type="number"] { flex-basis: 100%; }
+  }
+  .filters .check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); margin-bottom: 6px; }
+
+  .listing-toolbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--slate);
+    background: var(--surface-alt);
+  }
+  .toolbar-info { display: flex; align-items: center; gap: 8px; }
+  .sort-control { display: flex; align-items: center; gap: 8px; }
+  .sort-control label { font-weight: 600; color: var(--slate); }
+  .sort-control select {
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--surface);
+    color: var(--ink); font-size: 13px;
+  }
+
+  /* =====================================================================
+     Dealer Card Grid — the winning direction from the first v2 round.
+     Every card leads with a full-width price/timer band before the photo.
+     ===================================================================== */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 22px 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+  .card-trigger { all: unset; display: block; width: 100%; cursor: pointer; }
+  .card-trigger:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .card:has(.card-trigger:hover) { border-color: var(--slate-soft); }
+  .statband { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+  .statband .price { font-size: 20px; font-weight: 800; }
+  .statband .price-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--slate-soft); }
+  .card .photo-ph { width: 100%; height: 150px; border-radius: 0; }
+  .card-body { padding: 12px 14px 14px; }
+  .card-title { font-weight: 700; font-size: 14.5px; }
+  .card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0; }
+  .card-vitals { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--slate); }
+  .card-vitals svg { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; color: var(--slate-soft); }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+
+  /* ---------- Modal (native <dialog>, accessible by default) ----------
+     showModal() gives us, for free: focus trapped inside while open, Escape-to-close,
+     top-layer rendering above everything else, and an implicit role="dialog" — none of
+     that has to be hand-rolled in JS. What IS still on us: an accessible name
+     (aria-labelledby), moving focus into the dialog in a sensible order, returning focus
+     to whatever card opened it when it closes, and a click-outside-to-close affordance
+     that doesn't accidentally fire when clicking inside the dialog's own padding. */
+  /* Fixed warm off-white (#E8E6E3) — a neutral grey, not the old cool blue-grey — rather
+     than the theme-flipping var(--surface). Because that background no longer follows
+     the theme, every text/UI token used anywhere inside the modal has to be re-pinned to
+     its light-mode value right along with it, or dark mode ends up with light text
+     sitting on this now-permanently-light background. --paper is pinned too even though
+     nothing here currently reads it directly — it's the exact token that got missed once
+     already in an earlier round and caused a near-invisible button. */
+  dialog.vehicle-modal {
+    --paper: #FAFAF9; --surface: #E8E6E3; --surface-alt: #F2F0EC; --ink: #262626; --slate: #262626; --slate-soft: #262626;
+    --line: #D9D6D1; --amber: #96600A; --amber-soft: #FBEEDA; --good: #23744F; --good-soft: #E4F3EC; --bad: #A3342F; --bad-soft: #FBE7E6;
+    border: 0; border-radius: 12px; padding: 0; background: var(--surface); color: var(--ink);
+    width: min(920px, 92vw); max-height: 88vh; box-shadow: var(--shadow-lg);
+  }
+  dialog.vehicle-modal[open] { display: flex; flex-direction: column; }
+  dialog.vehicle-modal::backdrop { background: rgb(38 38 38 / 0.55); }
+  dialog.vehicle-modal:focus-visible { outline: none; } /* the dialog itself is focused programmatically, not via pointer/keyboard nav — no visible ring needed on the container */
+  .modal-header {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 18px 22px 0; border-bottom: 1px solid var(--line);
+  }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-alt);
+    color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .modal-close:hover { background: var(--line); }
+  .modal-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .modal-body { flex: 1; overflow-y: auto; padding: 22px; }
+  @media (max-width: 640px) {
+    dialog.vehicle-modal { width: 100vw; max-width: 100vw; height: 100%; max-height: 100%; border-radius: 0; margin: 0; }
+  }
+
+  /* ---------- Shared detail content (rendered inside the modal) ---------- */
+  /* detail-main comes first in the actual markup (see detailHtml()), bid-box second —
+     unlike the row-based accordion elsewhere in this project, this modal is opened
+     deliberately for one vehicle a user has already chosen to look closer at, so
+     review-then-bid is the right order on mobile too, not price-first. Because DOM order
+     and desired visual order now agree at every width, no `order` override is needed —
+     grid auto-placement already puts detail-main in the wider left column and bid-box in
+     the narrower right one, and the same order carries into the single-column mobile
+     stack for free. */
+  .detail-body { display: grid; grid-template-columns: 1.5fr 1fr; gap: 26px; align-items: start; }
+  @media (max-width: 899px) { .detail-body { grid-template-columns: 1fr; } }
+  .gallery { margin-bottom: 14px; }
+  .detail-photo { height: 190px; border-radius: 8px; }
+  .thumb-strip { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; }
+  .thumb-btn {
+    width: 52px; height: 40px; flex-shrink: 0; border-radius: 5px; border: 2px solid transparent;
+    padding: 0; cursor: pointer; background: var(--surface-alt); color: var(--slate-soft);
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .thumb-btn:hover { border-color: var(--slate-soft); }
+  .thumb-btn.active { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+  .thumb-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .detail-sub { font-size: 13px; color: var(--slate); margin: 4px 0 10px; }
+  .spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; margin: 14px 0; }
+  .spec-grid dt { color: var(--slate-soft); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .spec-grid dd { margin: 0; font-size: 13px; font-weight: 600; }
+  .block-title { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--slate-soft); margin: 14px 0 6px; }
+  .condition-text { font-size: 13.5px; line-height: 1.6; margin: 0; }
+  .damage-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+  .damage-list li { font-size: 13.5px; display: flex; gap: 8px; }
+  .damage-list li::before { content: "•"; color: var(--amber); font-weight: 900; }
+  .bid-box { background: var(--surface-alt); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .bid-box .current-label { font-size: 11px; text-transform: uppercase; color: var(--slate-soft); letter-spacing: .05em; }
+  .bid-box .current { font-size: 27px; font-weight: 800; }
+  .bid-box .meta-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--slate); margin: 10px 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .bid-box .bid-form { display: flex; gap: 8px; margin-top: 14px; }
+  .bid-box input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 7px; padding: 10px; font-size: 15px; font-weight: 700; background: var(--surface); color: var(--ink); }
+</style>
+
+<div class="statusbar">
+  <span class="tag">Design Review — v4, Option 1</span>
+  <span class="caption"><strong>Graphite Neutral.</strong> The shipped palette's "ink" and "paper" tokens both leaned cool/blue-hued, and got used as solid fills in several places — this option replaces them with a true neutral grey scale, and stops using dark fills for large surfaces (buttons, footer) entirely.</span>
+</div>
+<div class="brief">
+  <strong>What changed from the shipped v2 design, and why:</strong>
+  <ul>
+    <li>Every neutral token (<code>--ink</code>, <code>--slate</code>, <code>--paper</code>, <code>--surface-alt</code>, <code>--line</code>) is now a true grey with zero blue hue — the shipped values (e.g. <code>--ink: #10202E</code>) had more blue than red or green in them, which read as "blue on blue" once enough surfaces used them together</li>
+    <li><strong>No more solid dark fills for large areas.</strong> The old design used <code>--ink</code> as a background on the primary header button, the wordmark chip, AND the footer — three separate uses that individually made sense but stacked into a page that felt heavy/dark overall. The primary button is now bordered instead of filled, the chip is now an outline, and the footer is now a light neutral panel with dark text</li>
+    <li>The modal's pinned "always light" surface changed from a cool blue-grey (<code>#E1E4E7</code>) to a warm neutral grey (<code>#E8E6E3</code>) — same technique, different hue</li>
+    <li>Amber (auction urgency) and green (bid CTA) are untouched — those already read as intentional accent colors, not part of the "too dark/too blue" problem</li>
+  </ul>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <div class="wordmark">THE BLOCK <span class="chip">BUYER</span></div>
+    <nav class="site-nav"><a href="#">Inventory</a><a href="#">Watchlist</a><a href="#">How Bidding Works</a></nav>
+    <div class="header-search"><span aria-hidden="true">🔍</span><input placeholder="Search make, model, VIN, lot #" aria-label="Search inventory" /></div>
+    <div class="header-actions"><button class="btn btn-cta">Sign In</button><button class="btn btn-primary">Register to Bid</button></div>
+  </div>
+</header>
+
+<div class="body">
+ <div class="container">
+  <aside class="filters">
+    <div>
+      <h3>Filter Inventory</h3>
+      <div class="field"><label for="filter-make">Make</label><select id="filter-make"><option>All Makes</option><option>Toyota</option><option>Ford</option><option>Tesla</option></select></div>
+      <div class="field"><label for="filter-body">Body Style</label><select id="filter-body"><option>All Types</option><option>SUV</option><option>Sedan</option><option>Truck</option></select></div>
+      <div class="field"><span class="field-label" id="price-range-label">Price Range</span><div class="range" role="group" aria-labelledby="price-range-label"><input type="number" placeholder="Min" aria-label="Minimum price" /><span aria-hidden="true">–</span><input type="number" placeholder="Max" aria-label="Maximum price" /></div></div>
+    </div>
+    <div>
+      <h3>Title Status</h3>
+      <label class="check"><input type="checkbox" checked /> Clean</label>
+      <label class="check"><input type="checkbox" /> Rebuilt</label>
+      <label class="check"><input type="checkbox" /> Salvage</label>
+    </div>
+  </aside>
+  <div>
+    <div class="listing-toolbar">
+      <div class="toolbar-info">
+        <span id="grid-count"></span>
+        <span aria-hidden="true">·</span>
+        <span>Showing all provinces</span>
+      </div>
+      <div class="sort-control">
+        <label for="sort-select">Sort by</label>
+        <select id="sort-select"><option>Ending Soonest</option><option>Price: Low to High</option><option>Price: High to Low</option><option>Newest Year</option></select>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+ </div>
+</div>
+
+<dialog class="vehicle-modal" id="vehicle-modal" aria-labelledby="modal-title" tabindex="-1">
+  <div class="modal-header">
+    <h2 id="modal-title"></h2>
+    <button type="button" class="modal-close" id="modal-close" aria-label="Close vehicle details">✕</button>
+  </div>
+  <div class="modal-body" id="modal-body"></div>
+</dialog>
+
+<footer class="site-footer"><div class="container"><span>© 2026 The Block.</span><a href="#">About</a></div></footer>
+
+<script>
+  const vehicles = [
+    { id:"v1", year:2025, make:"Mazda", model:"CX-5", trim:"Turbo", body:"SUV", odometer:24534, transmission:"Automatic", drivetrain:"FWD", fuel:"Gasoline", grade:4.0, titleStatus:"clean", city:"Mississauga", province:"Ontario", lot:"A-0001", vin:"CG2UAF4T8LRBBVWJY", dealer:"Highway 7 Auto Sales", startingBid:20500, reserve:29000, buyNow:null, currentBid:21000, bidCount:11, live:true, minutesLeft:240, photos:4, report:"Very clean vehicle inside and out. Minor cosmetic wear only. All electronics and features fully functional.", damage:[] },
+    { id:"v2", year:2019, make:"Chevrolet", model:"Equinox", trim:"LS", body:"SUV", odometer:126793, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:2.7, titleStatus:"clean", city:"London", province:"Ontario", lot:"A-0002", vin:"D9V7RWMW31KR4Z96R", dealer:"Golden Horseshoe Motors", startingBid:9500, reserve:null, buyNow:null, currentBid:12500, bidCount:13, live:true, minutesLeft:1560, photos:6, report:"Rough condition with notable damage. Suitable for buyer comfortable with repairs. Core mechanical systems operational.", damage:["Curb rash on front-right wheel","Minor scratches on front bumper"] },
+    { id:"v3", year:2021, make:"BMW", model:"3 Series", trim:"330i xDrive", body:"Sedan", odometer:69042, transmission:"Automatic", drivetrain:"RWD", fuel:"Gasoline", grade:1.7, titleStatus:"salvage", city:"Kelowna", province:"British Columbia", lot:"A-0006", vin:"FCDBJZZV9APMK4UG8", dealer:"Westcoast Auto Sales", startingBid:10500, reserve:14500, buyNow:null, currentBid:null, bidCount:0, live:false, minutesLeft:360, photos:5, report:"Vehicle has substantial damage. Sold as-is. Recommended for parts or significant rebuild only.", damage:["Transmission slips between 2nd and 3rd gear","Water damage to rear cargo area carpet","Worn brake rotors - due for replacement","Small dent on driver-side door","Dent on rear quarter panel","Paint touch-up on hood (rock chips)"] },
+    { id:"v4", year:2020, make:"Jeep", model:"Grand Cherokee", trim:"Overland", body:"SUV", odometer:60344, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:2.1, titleStatus:"rebuilt", city:"Windsor", province:"Ontario", lot:"A-0008", vin:"0UTWD2Z71BBMHH9W4", dealer:"Maple Motors", startingBid:15000, reserve:18000, buyNow:null, currentBid:15500, bidCount:9, live:true, minutesLeft:1080, photos:4, report:"Rough condition with notable damage. Suitable for buyer comfortable with repairs. Core mechanical systems operational.", damage:["Scratch on liftgate","Curb rash on front-right wheel","Minor scratches on front bumper","Light hail damage on roof","Paint peeling on roof rack"] },
+    { id:"v5", year:2023, make:"Ram", model:"1500", trim:"Laramie", body:"Truck", odometer:58993, transmission:"CVT", drivetrain:"4WD", fuel:"Gasoline", grade:3.8, titleStatus:"clean", city:"Surrey", province:"British Columbia", lot:"A-0004", vin:"73RF5U464EX3GNV9T", dealer:"Fraser Valley Auto Group", startingBid:26500, reserve:41000, buyNow:51500, currentBid:34000, bidCount:9, live:true, minutesLeft:180, photos:5, report:"Fair condition overall. Interior has some wear but no major damage. A few exterior blemishes. Drives well.", damage:["Light hail damage on roof"] },
+    { id:"v6", year:2022, make:"Tesla", model:"Model S", trim:"Long Range", body:"Sedan", odometer:63473, transmission:"Single-Speed", drivetrain:"RWD", fuel:"Electric", grade:3.1, titleStatus:"clean", city:"Halifax", province:"Nova Scotia", lot:"C-0007", vin:"8204NEZY776LSCJNW", dealer:"Harbourfront Motors", startingBid:45000, reserve:null, buyNow:null, currentBid:77000, bidCount:14, live:true, minutesLeft:45, photos:5, report:"Average condition. Has some visible wear on high-touch surfaces. Engine and transmission perform within normal parameters.", damage:["Paint touch-up on hood (rock chips)","Damaged mud flap (rear left)","Chip in windshield (passenger side)"] },
+    { id:"v7", year:2024, make:"Tesla", model:"Model 3", trim:"Long Range", body:"Sedan", odometer:29593, transmission:"Single-Speed", drivetrain:"AWD", fuel:"Electric", grade:4.3, titleStatus:"clean", city:"Ottawa", province:"Ontario", lot:"A-0009", vin:"7U1B8WKB302J5SGYT", dealer:"Parkway Ford", startingBid:27000, reserve:null, buyNow:null, currentBid:47000, bidCount:12, live:true, minutesLeft:2880, photos:3, report:"Above-average condition for year and mileage. All mechanical systems functioning properly. Recently serviced with new tires.", damage:[] },
+    { id:"v8", year:2020, make:"Kia", model:"Sportage", trim:"SX", body:"SUV", odometer:150074, transmission:"Automatic", drivetrain:"AWD", fuel:"Hybrid", grade:2.8, titleStatus:"clean", city:"Sherbrooke", province:"Quebec", lot:"A-0011", vin:"FC9BT5Z234R7YJFN0", dealer:"Laurentian Auto Group", startingBid:15000, reserve:null, buyNow:null, currentBid:null, bidCount:0, live:false, minutesLeft:1200, photos:4, report:"Below-average condition. Visible damage present. May require immediate maintenance to address noted issues.", damage:["Small dent on driver-side door","Scuff marks on door sill plates","Small tear in rear seat upholstery","Paint peeling on roof rack","Faded headlight lenses"] },
+    { id:"v9", year:2018, make:"Ram", model:"1500", trim:"Laramie", body:"Truck", odometer:98107, transmission:"Automatic", drivetrain:"4WD", fuel:"Gasoline", grade:2.8, titleStatus:"clean", city:"Kitchener", province:"Ontario", lot:"A-0016", vin:"VCX5G4H94PAPBNSPA", dealer:"Durham Auto Exchange", startingBid:14500, reserve:null, buyNow:null, currentBid:18000, bidCount:18, live:true, minutesLeft:360, photos:4, report:"Below-average condition. Visible damage present. May require immediate maintenance to address noted issues.", damage:["Check engine light - catalytic converter code","Scratch on liftgate","Worn leather on driver seat bolster"] },
+    { id:"v10", year:2023, make:"Nissan", model:"Pathfinder", trim:"Rock Creek", body:"SUV", odometer:48161, transmission:"CVT", drivetrain:"AWD", fuel:"Gasoline", grade:4.3, titleStatus:"clean", city:"Airdrie", province:"Alberta", lot:"A-0023", vin:"NG1GZH2K0EG88ML61", dealer:"Stampede Auto Exchange", startingBid:18000, reserve:null, buyNow:null, currentBid:null, bidCount:0, live:false, minutesLeft:2880, photos:4, report:"Above-average condition for year and mileage. All mechanical systems functioning properly. Recently serviced with new tires.", damage:[] },
+    { id:"v11", year:2022, make:"Subaru", model:"WRX", trim:"Premium", body:"Sedan", odometer:76229, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:3.7, titleStatus:"clean", city:"Windsor", province:"Ontario", lot:"A-0034", vin:"XCKUDEG41F1RLBWY0", dealer:"Maple Motors", startingBid:11500, reserve:null, buyNow:null, currentBid:null, bidCount:0, live:false, minutesLeft:1440, photos:4, report:"Reasonable condition with expected wear. Would benefit from detailing. No major mechanical concerns identified.", damage:["Crack in rear taillight housing","Paint peeling on roof rack","Dent on tailgate"] },
+    { id:"v12", year:2025, make:"Mazda", model:"CX-5", trim:"Carbon Edition", body:"SUV", odometer:23295, transmission:"Automatic", drivetrain:"AWD", fuel:"Gasoline", grade:4.4, titleStatus:"clean", city:"London", province:"Ontario", lot:"A-0042", vin:"4CJYUZS54GRG9BXZZ", dealer:"AutoPark Toronto", startingBid:23000, reserve:null, buyNow:null, currentBid:null, bidCount:0, live:false, minutesLeft:4320, photos:4, report:"Exceptional condition. Single previous owner. Garage kept. No mechanical issues reported.", damage:[] },
+  ];
+
+  const money = n => n==null ? "—" : "$"+n.toLocaleString("en-CA");
+  const km = n => n.toLocaleString("en-CA")+" km";
+  const nextMin = v => (v.currentBid ?? v.startingBid) + 500;
+
+  function conditionTier(g){ if(g>=4)return{label:"Excellent",tone:"good"}; if(g>=3)return{label:"Good",tone:"good"}; if(g>=2)return{label:"Fair",tone:"warn"}; return{label:"Poor",tone:"bad"}; }
+  function titleMeta(s){ return s==="clean"?{label:"Clean Title",tone:"good"}:s==="rebuilt"?{label:"Rebuilt Title",tone:"warn"}:{label:"Salvage Title",tone:"bad"}; }
+  function reserveMeta(v){ if(v.reserve==null)return{label:"No Reserve",tone:"neutral"}; if(v.currentBid!=null&&v.currentBid>=v.reserve)return{label:"Reserve Met",tone:"good"}; return{label:"Reserve Not Met",tone:"neutral"}; }
+  function pill(m){ return `<span class="pill pill-${m.tone}" data-tone="${m.tone}">${m.label}</span>`; }
+  function formatDuration(min){ const d=Math.floor(min/1440), h=Math.floor((min%1440)/60), m=min%60; if(d>0) return h>0?`${d}d ${h}h`:`${d}d`; if(h>0) return `${h}h`; return `${m}m`; }
+
+  function urgencyTier(v){ if(!v.live) return "upcoming"; if(v.minutesLeft<=60) return "urgent"; if(v.minutesLeft<=360) return "soon"; return "normal"; }
+  function timeHtml(v, withBadge){
+    const tier = urgencyTier(v);
+    const label = v.live ? `Ends in ${formatDuration(v.minutesLeft)}` : `Starts in ${formatDuration(v.minutesLeft)}`;
+    const cls = tier==="upcoming" ? "time-upcoming" : `time-${tier}`;
+    const badge = (withBadge && tier==="urgent") ? `<span class="urgent-badge">⏱ Ending Soon</span> ` : "";
+    return `${badge}<span class="${cls}">${label}</span>`;
+  }
+  function photoPh(v, w, h, extraClass){
+    const cls = extraClass ? `photo-ph ${extraClass}` : "photo-ph";
+    const width = w === "100%" ? "100%" : `${w}px`;
+    return `<div class="${cls}" style="width:${width};height:${h}px;border-radius:6px;">
+      <span>${v.year} ${v.make} ${v.model}</span>
+      <span class="count">${v.photos}</span>
+    </div>`;
+  }
+  // Hero photo + clickable thumbnail strip, all placeholder swatches since the dataset's
+  // photos are external URLs the mockup deliberately never fetches (see PhotoThumb/
+  // PhotoGallery in the real app for why — same reasoning, this mockup just never needed
+  // real <img> tags to demonstrate a layout). The hero's label calls out which index is
+  // active so the interaction reads clearly even without real distinct photos.
+  function galleryHtml(v, activeIndex){
+    const thumbs = Array.from({ length: v.photos }, (_, i) => `
+      <button type="button" class="thumb-btn ${i === activeIndex ? "active" : ""}" data-index="${i}" aria-label="View photo ${i + 1} of ${v.photos}" aria-pressed="${i === activeIndex}">${i + 1}</button>
+    `).join("");
+    return `
+      <div class="gallery">
+        <div class="photo-ph detail-photo" style="width:100%;height:190px;border-radius:6px;">
+          <span>${v.year} ${v.make} ${v.model} — Photo ${activeIndex + 1} of ${v.photos}</span>
+        </div>
+        <div class="thumb-strip">${thumbs}</div>
+      </div>`;
+  }
+  function vitalsHtml(v){
+    const gaugeIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 100 18 9 9 0 000-18z"/><path d="M12 12l4-4"/></svg>`;
+    const pinIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+    let html = `<span>${gaugeIcon}${km(v.odometer)}</span><span>${pinIcon}${v.city}, ${v.province}</span><span>${v.drivetrain}</span>`;
+    if (v.damage.length > 0) {
+      html += `<span class="damage-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>${v.damage.length} noted</span>`;
+    }
+    return html;
+  }
+
+  function detailHtml(v){
+    const min = nextMin(v);
+    return `
+    <div class="detail-body">
+      <div class="detail-main">
+        ${galleryHtml(v, 0)}
+        <div class="card-badges">${pill(titleMeta(v.titleStatus))}${pill(conditionTier(v.grade))}${pill(reserveMeta(v))}</div>
+        <div class="detail-sub mono">VIN ${v.vin} · ${v.dealer} · Lot ${v.lot}</div>
+        <dl class="spec-grid">
+          <div><dt>Odometer</dt><dd>${km(v.odometer)}</dd></div>
+          <div><dt>Fuel Type</dt><dd>${v.fuel}</dd></div>
+          <div><dt>Transmission</dt><dd>${v.transmission}</dd></div>
+          <div><dt>Drivetrain</dt><dd>${v.drivetrain}</dd></div>
+          <div><dt>Body Style</dt><dd>${v.body}</dd></div>
+          <div><dt>Condition Grade</dt><dd>${v.grade.toFixed(1)} / 5.0</dd></div>
+        </dl>
+        <div class="block-title">Condition Report</div>
+        <p class="condition-text">${v.report}</p>
+        <div class="block-title">Damage Notes</div>
+        ${v.damage.length?`<ul class="damage-list">${v.damage.map(d=>`<li>${d}</li>`).join("")}</ul>`:`<p class="condition-text">No damage reported.</p>`}
+      </div>
+      <div class="bid-box">
+        <div class="current-label">${v.currentBid!=null?"Current Bid":"Starting Bid"}</div>
+        <div class="current mono">${money(v.currentBid ?? v.startingBid)}</div>
+        <div class="meta-row"><span>${v.bidCount} bids</span><span>${timeHtml(v,false)}</span></div>
+        ${v.buyNow?`<div class="meta-row" style="border-top:none;"><span>Buy It Now</span><span class="mono">${money(v.buyNow)}</span></div>`:""}
+        <div class="bid-form"><input type="number" min="${min}" step="500" value="${min}" aria-label="Bid amount in dollars"/><button class="btn btn-cta" type="button">Place Bid</button></div>
+      </div>
+    </div>`;
+  }
+
+  // ---------------- Grid (renders once — the modal handles detail, not the grid) ----------------
+  function renderGrid(){
+    const grid = document.getElementById("grid");
+    document.getElementById("grid-count").textContent = `${vehicles.length} ${vehicles.length === 1 ? "lot" : "lots"}`;
+    grid.innerHTML = vehicles.map(v => `
+      <div class="card">
+        <button type="button" class="card-trigger" data-id="${v.id}" aria-haspopup="dialog">
+          <div class="statband">
+            <div><div class="price-label">${v.currentBid!=null?"Current Bid":"Starting Bid"}</div><div class="price mono">${money(v.currentBid ?? v.startingBid)}</div></div>
+            <div style="text-align:right;">${timeHtml(v, true)}</div>
+          </div>
+          ${photoPh(v, "100%", 150)}
+          <div class="card-body">
+            <div class="card-title">${v.year} ${v.make} ${v.model} ${v.trim}</div>
+            <div class="card-badges">${pill(titleMeta(v.titleStatus))}${pill(conditionTier(v.grade))}</div>
+            <div class="card-vitals">${vitalsHtml(v)}</div>
+            <div class="card-footer">${pill(reserveMeta(v))}<span style="font-size:12px;color:var(--slate);">${v.bidCount} bids</span></div>
+          </div>
+        </button>
+      </div>`).join("");
+
+    grid.querySelectorAll(".card-trigger").forEach(btn => {
+      btn.addEventListener("click", () => openModal(vehicles.find(v => v.id === btn.dataset.id), btn));
+    });
+  }
+
+  // ---------------- Modal ----------------
+  const modal = document.getElementById("vehicle-modal");
+  const modalTitle = document.getElementById("modal-title");
+  const modalBody = document.getElementById("modal-body");
+  const modalClose = document.getElementById("modal-close");
+  let lastTrigger = null;
+
+  let selectedPhoto = 0;
+
+  // Re-renders only the gallery (hero + thumb strip), not the whole modal body — swapping
+  // photos shouldn't reset scroll position or destroy the spec grid/bid form's DOM nodes,
+  // and doing a full modalBody.innerHTML replace on every thumbnail click would do exactly
+  // that (and, worse, would yank focus away from whatever the user just clicked).
+  function wireThumbs(v){
+    modalBody.querySelectorAll(".thumb-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedPhoto = Number(btn.dataset.index);
+        const gallery = modalBody.querySelector(".gallery");
+        gallery.outerHTML = galleryHtml(v, selectedPhoto);
+        wireThumbs(v);
+      });
+    });
+  }
+
+  function openModal(v, triggerEl){
+    lastTrigger = triggerEl;
+    selectedPhoto = 0;
+    modalTitle.textContent = `${v.year} ${v.make} ${v.model} ${v.trim}`;
+    modalBody.innerHTML = detailHtml(v);
+    wireThumbs(v);
+    modal.showModal();
+    // Focus the dialog itself first (tabindex="-1" makes that possible) so its accessible
+    // name — the vehicle title — is announced before a screen reader user lands on any
+    // interactive control inside it, rather than jumping straight to the close button.
+    modal.focus();
+  }
+
+  modalClose.addEventListener("click", () => modal.close());
+
+  // Escape and the native backdrop are already handled by showModal(); this only adds
+  // click-outside-to-close. Checked by bounding box rather than `event.target === modal`,
+  // since the dialog has no padding of its own (header/body fill it edge to edge) — every
+  // click inside the visible card would otherwise land on a child element, never the
+  // dialog itself, making target-equality checks unreliable here.
+  modal.addEventListener("click", (event) => {
+    const rect = modal.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) modal.close();
+  });
+
+  // Native <dialog> doesn't return focus to whatever opened it — that's on us. Without
+  // this, focus would drop to <body> on close, which is disorienting for keyboard and
+  // screen reader users (they'd lose their place in the grid entirely).
+  modal.addEventListener("close", () => {
+    if (lastTrigger) lastTrigger.focus();
+  });
+
+  renderGrid();
+</script>

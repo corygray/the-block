@@ -21,10 +21,11 @@
 }
 
 .chip {
-  background: var(--ink);
-  color: var(--paper);
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
   font-size: 11px;
-  padding: 2px 6px;
+  padding: 1px 6px;
   border-radius: 3px;
   letter-spacing: 0.04em;
 }
@@ -75,7 +76,7 @@
   outline: none;
   /* Pinned dark to match the fixed white background above — a background that doesn't
      flip with the theme needs text that doesn't either. */
-  color: #10202e;
+  color: #262626;
   font-size: 14px;
   width: 100%;
 }
@@ -84,4 +85,24 @@
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+/* Mobile: Sign In/Register move above the search bar (order, not DOM position — desktop
+   keeps its own order, where search sits snug against the actions group via
+   margin-left: auto on .search), and the search bar goes full width instead of the
+   fixed-ish 320-420px it uses everywhere else. Same 860px breakpoint the rest of the app
+   uses for its mobile layout. */
+@media (max-width: 860px) {
+  .search {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .actions {
+    order: 2;
+    width: 100%;
+  }
 }

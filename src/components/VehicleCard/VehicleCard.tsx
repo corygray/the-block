@@ -1,6 +1,6 @@
 import type { Vehicle } from "../../types/vehicle";
 import type { AuctionTiming } from "../../lib/auction";
-import { formatAuctionTiming, urgencyTier } from "../../lib/auction";
+import { auctionStatusDot, formatAuctionTiming, urgencyTier } from "../../lib/auction";
 import { conditionTier, formatKm, formatMoney, reserveMeta, titleMeta } from "../../lib/format";
 import { Pill } from "../Pill/Pill";
 import { PhotoThumb } from "../PhotoThumb/PhotoThumb";
@@ -24,6 +24,7 @@ const TIME_CLASS = {
 // modal-only, see BUILD_LOG.md), and damage is a quick flag instead of a full list.
 export function VehicleCard({ vehicle, timing, onOpen }: Props) {
   const tier = urgencyTier(timing);
+  const statusDot = auctionStatusDot(timing);
 
   return (
     <div className={styles.card}>
@@ -44,7 +45,15 @@ export function VehicleCard({ vehicle, timing, onOpen }: Props) {
           </div>
           <div className={styles.time}>
             {tier === "urgent" && <span className={styles.urgentBadge}>⏱ Ending Soon</span>}
-            <span className={styles[TIME_CLASS[tier]]}>{formatAuctionTiming(timing)}</span>
+            <span className={styles.timeRow}>
+              {statusDot === "live" && (
+                <>
+                  <span className={styles.dotLive} aria-hidden="true" />
+                  <span className={styles.liveLabel}>LIVE:</span>
+                </>
+              )}
+              <span className={styles[TIME_CLASS[tier]]}>{formatAuctionTiming(timing)}</span>
+            </span>
           </div>
         </div>
         <PhotoThumb vehicle={vehicle} width="100%" height={150} />

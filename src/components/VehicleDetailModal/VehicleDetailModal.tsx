@@ -63,6 +63,7 @@ export function VehicleDetailModal({ vehicle, timing, onClose, onPlaceBid }: Pro
 
   const tier = timing ? urgencyTier(timing) : null;
   const timingLabel = timing ? formatAuctionTiming(timing) : "";
+  const canBid = timing?.status === "live";
 
   return (
     <dialog
@@ -88,9 +89,9 @@ export function VehicleDetailModal({ vehicle, timing, onClose, onPlaceBid }: Pro
             </button>
           </div>
           <div className={styles.body}>
+            <PhotoGallery vehicle={vehicle} />
             <div className={styles.detailBody}>
               <div className={styles.detailMain}>
-                <PhotoGallery vehicle={vehicle} />
                 <div className={styles.badges}>
                   <Pill {...titleMeta(vehicle.title_status)} />
                   <Pill {...conditionTier(vehicle.condition_grade)} />
@@ -139,7 +140,12 @@ export function VehicleDetailModal({ vehicle, timing, onClose, onPlaceBid }: Pro
                   <p className={styles.conditionText}>No damage reported.</p>
                 )}
               </div>
-              <BidPanel vehicle={vehicle} timingLabel={timingLabel} onPlaceBid={onPlaceBid} />
+              <BidPanel
+                vehicle={vehicle}
+                timingLabel={timingLabel}
+                canBid={canBid}
+                onPlaceBid={onPlaceBid}
+              />
             </div>
           </div>
         </>

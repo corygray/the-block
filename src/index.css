@@ -1,40 +1,46 @@
-/* Design tokens — ported directly from the vetted mockup (design/inventory-listing-mockup.html).
-   See BUILD_LOG.md for why each of these values is what it is (several were changed
-   specifically to fix real contrast failures, not just for taste). */
+/* Design tokens — the "Graphite Neutral" pass (design/card-grid-modal-v4-graphite.html).
+   See BUILD_LOG.md for why: the original values (e.g. --ink: #10202E) carried more blue
+   than red or green, which read as "blue on blue" once enough surfaces used them together.
+   These are true greys (R=G=B) instead. */
 :root {
-  --paper: #F4F6F8;
+  --paper: #FAFAF9;
   --surface: #FFFFFF;
-  --surface-alt: #EEF1F5;
-  --ink: #10202E;
-  --slate: #55697D;
-  --slate-soft: #5A6E82;
-  --line: #DCE2E8;
+  --surface-alt: #F2F1EF;
+  --ink: #262626;
+  --slate: #5B5B5B;
+  --slate-soft: #4B4B4B;
+  --line: #E2E0DC;
   --amber: #96600A;
   --amber-soft: #FBEEDA;
   --good: #23744F;
   --good-soft: #E4F3EC;
   --bad: #A3342F;
   --bad-soft: #FBE7E6;
-  --shadow: 0 8px 24px -12px rgb(16 32 46 / 0.25);
-  --shadow-lg: 0 24px 60px -16px rgb(16 32 46 / 0.45);
+  /* Dedicated status-dot color, not reused from --good — that token is tuned for text
+     on a tinted-background pill, not a small solid fill sitting directly on a neutral
+     card surface, and needed its own contrast pass (see BUILD_LOG.md). */
+  --live-dot: #127A45;
+  --shadow: 0 8px 24px -12px rgb(38 38 38 / 0.15);
+  --shadow-lg: 0 24px 60px -16px rgb(38 38 38 / 0.28);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0B1420;
-    --surface: #121D2C;
-    --surface-alt: #16233A;
-    --ink: #EAF0F6;
-    --slate: #9FB1C4;
-    --slate-soft: #728AA1;
-    --line: #263A4E;
+    --paper: #18181A;
+    --surface: #222224;
+    --surface-alt: #2A2A2D;
+    --ink: #F2F1EF;
+    --slate: #B0B0B0;
+    --slate-soft: #969696;
+    --line: #38383B;
     --amber: #E0A23D;
     --amber-soft: #34270F;
     --good: #57B78C;
     --good-soft: #163425;
     --bad: #E27A75;
     --bad-soft: #3A1B1B;
+    --live-dot: #34D399;
     --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
     --shadow-lg: 0 24px 60px -16px rgb(0 0 0 / 0.7);
     color-scheme: dark;
@@ -42,19 +48,20 @@
 }
 
 :root[data-theme="dark"] {
-  --paper: #0B1420;
-  --surface: #121D2C;
-  --surface-alt: #16233A;
-  --ink: #EAF0F6;
-  --slate: #9FB1C4;
-  --slate-soft: #728AA1;
-  --line: #263A4E;
+  --paper: #18181A;
+  --surface: #222224;
+  --surface-alt: #2A2A2D;
+  --ink: #F2F1EF;
+  --slate: #B0B0B0;
+  --slate-soft: #969696;
+  --line: #38383B;
   --amber: #E0A23D;
   --amber-soft: #34270F;
   --good: #57B78C;
   --good-soft: #163425;
   --bad: #E27A75;
   --bad-soft: #3A1B1B;
+  --live-dot: #34D399;
   --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.5);
   --shadow-lg: 0 24px 60px -16px rgb(0 0 0 / 0.7);
   color-scheme: dark;

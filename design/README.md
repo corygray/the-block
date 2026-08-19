@@ -1,8 +1,9 @@
 # Design Process
 
-Two rounds of interactive HTML/CSS/JS mockups, used to work through the buyer
+Three rounds of interactive HTML/CSS/JS mockups, used to work through the buyer
 marketplace's layout, color, accessibility, and interaction design before (and alongside)
-the React code. Both are self-contained — open either directly in a browser, no build step.
+the React code. All three are self-contained — open any of them directly in a browser, no
+build step.
 
 ## v1 — `inventory-listing-mockup.html`
 
@@ -31,6 +32,21 @@ treatment. Ends with a working hero-photo + thumbnail-strip gallery inside the m
 
 Live version:
 https://claude.ai/code/artifact/c32c19ac-a10a-4dd5-bd55-3c21920b9994
+
+## v3 — `card-grid-modal-v3-graphite.html`
+
+After living with v2's shipped palette, it read as "blue on blue" and too dark — the
+`--ink`/`--paper`/etc. tokens all carried more blue than red or green in their hex values
+(e.g. `--ink: #10202E`), and `--ink` was used as a *solid fill* on the primary button, the
+wordmark chip, and the footer, which stacked into a heavy, dark-feeling page even though no
+single instance was wrong on its own. Explored two structurally-identical, color-only
+directions to fix it — a "Graphite Neutral" pass (true grey tokens, bordered buttons
+instead of filled ones) and a lighter "Soft & Light" pass (one accent color for the whole
+app, borderless shadow-only cards) — and picked **Graphite Neutral**. Same card grid +
+modal structure as v2, only the color system and a few fill-vs-border treatments changed.
+
+Live version:
+https://claude.ai/code/artifact/157b6aa0-6079-4af2-a635-5dcd561d6476
 
 ## Notes
 

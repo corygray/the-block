@@ -1,6 +1,7 @@
 .footer {
-  background: var(--ink);
-  color: var(--slate-soft);
+  background: var(--surface-alt);
+  color: var(--slate);
+  border-top: 1px solid var(--line);
   margin-top: 40px;
   font-size: 13px;
 }
@@ -19,7 +20,7 @@
 }
 
 .links a {
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: none;
   opacity: 0.85;
 }

@@ -1,8 +1,24 @@
+/* Elevated with its own shadow (previously flat, same plane as everything around it) —
+   this is the one panel in the modal a buyer actually acts on, so it gets more visual
+   weight than a plain bordered box. Height is entirely natural — no forced/stretched
+   height, no anchoring tricks (a prior pass tried both and it read as artificial). gap
+   gives consistent spacing between the three logical groups (price, meta row, actions)
+   instead of a different hand-picked margin on each one. */
 .panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background: var(--surface-alt);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .currentLabel {
@@ -13,8 +29,9 @@
 }
 
 .current {
-  font-size: 27px;
+  font-size: 30px;
   font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .metaRow {
@@ -22,7 +39,6 @@
   justify-content: space-between;
   font-size: 12.5px;
   color: var(--slate);
-  margin: 10px 0;
   padding: 10px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -32,10 +48,15 @@
   border-top: none;
 }
 
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .form {
   display: flex;
   gap: 8px;
-  margin-top: 14px;
 }
 
 .input {
@@ -50,9 +71,10 @@
   background: var(--surface);
 }
 
+/* min-height keeps this reserved even when empty, so a message appearing/disappearing
+   doesn't shift the layout around it. */
 .msg {
   font-size: 12px;
-  margin-top: 8px;
   min-height: 16px;
 }
 
@@ -62,4 +84,42 @@
 
 .ok {
   color: var(--good);
+}
+
+/* Classic auction-site pattern (eBay et al.): bid and buy-now are two separate paths to
+   the same vehicle, presented as alternatives rather than stacked as if both applied at
+   once. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--slate-soft);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.buyNow {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.notLive {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--slate);
 }

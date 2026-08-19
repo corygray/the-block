@@ -3,7 +3,8 @@
 }
 
 .hero {
-  height: 220px;
+  position: relative;
+  height: 340px;
   border-radius: 8px;
   overflow: hidden;
   background: var(--surface-alt);
@@ -57,5 +58,100 @@
 
 .thumbButton:focus-visible {
   outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.expandButton {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.expandButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.expandButton:hover {
+  background: rgb(0 0 0 / 0.75);
+}
+
+.expandButton:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Full-screen photo viewer, opened from inside the vehicle detail modal — a genuine
+   nested <dialog>. Fixed near-black regardless of theme, the standard convention for a
+   photo lightbox (Instagram/Google Photos-style): there's no text content in here that
+   needs to track the app's own palette, and a dark surround is what makes the photo
+   itself read best. */
+.lightbox {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: #141414;
+}
+
+.lightbox[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox::backdrop {
+  background: #141414;
+}
+
+/* Focused programmatically on open (tabIndex={-1} + .focus()), not via pointer/keyboard
+   nav — no visible ring needed on the container itself. */
+.lightbox:focus-visible {
+  outline: none;
+}
+
+.lightboxImg {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+}
+
+.lightboxClose {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxClose:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.lightboxClose:focus-visible {
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }

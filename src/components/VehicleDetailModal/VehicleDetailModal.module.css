@@ -1,24 +1,30 @@
-/* Fixed off-white (#E1E4E7) — the same "active row" color used elsewhere in this project —
-   rather than the theme-flipping var(--surface). Because that background no longer
-   follows the theme, every text/UI token used anywhere inside the modal has to be
-   re-pinned to its light-mode value right along with it, or dark mode ends up with light
-   text on a now-permanently-light background. --paper is pinned too even though nothing
-   here currently references it directly — it's the exact token that got missed once
-   already (see BUILD_LOG.md, "Place Bid" button bug) and caused a near-invisible button. */
+/* Fixed warm grey (#D9D5CD) — a true neutral, not the old cool blue-grey — rather than
+   the theme-flipping var(--surface). Deliberately darker than the ambient page (--paper
+   is #FAFAF9, cards are pure white): the modal needs to visually separate from the page
+   behind it, not just sit at roughly the same brightness. --surface-alt (used by the bid
+   box) stays LIGHTER than this --surface, so the bid box reads as a raised panel against
+   a slightly darker modal background instead of blending into it. Because the background
+   no longer follows the theme, every text/UI token used anywhere inside the modal has to
+   be re-pinned to its light-mode value right along with it, or dark mode ends up with
+   light text on a now-permanently-light background. --paper is pinned too even though
+   nothing here currently references it directly — it's the exact token that got missed
+   once already (see BUILD_LOG.md, "Place Bid" button bug) and caused a near-invisible
+   button. */
 .modal {
-  --paper: #f4f6f8;
-  --surface: #e1e4e7;
-  --surface-alt: #eef1f5;
-  --ink: #10202e;
-  --slate: #000000;
-  --slate-soft: #000000;
-  --line: #dce2e8;
+  --paper: #fafaf9;
+  --surface: #d9d5cd;
+  --surface-alt: #f2f0ec;
+  --ink: #262626;
+  --slate: #262626;
+  --slate-soft: #262626;
+  --line: #c7c2b8;
   --amber: #96600a;
   --amber-soft: #fbeeda;
   --good: #23744f;
   --good-soft: #e4f3ec;
   --bad: #a3342f;
   --bad-soft: #fbe7e6;
+  --live-dot: #127a45;
   border: 0;
   border-radius: 12px;
   padding: 0;
@@ -35,7 +41,7 @@
 }
 
 .modal::backdrop {
-  background: rgb(16 32 46 / 0.55);
+  background: rgb(38 38 38 / 0.55);
 }
 
 /* The dialog itself is focused programmatically on open, not via pointer/keyboard nav —
@@ -104,7 +110,12 @@
    row-based accordion, this modal is opened deliberately for one vehicle someone already
    chose to look closer at, so review-then-bid is the right order at every width, mobile
    included. Because DOM order and desired visual order agree everywhere, no CSS `order`
-   override is needed. */
+   override is needed.
+   align-items: start — the bid box takes its own natural height from its content rather
+   than being stretched to match detailMain's (a prior pass tried forcing it to match and
+   anchoring its form to the bottom of the stretched space; that read as an artificial,
+   set height with a stray gap in the middle rather than a box that just grows with its
+   own content). */
 .detailBody {
   display: grid;
   grid-template-columns: 1.5fr 1fr;

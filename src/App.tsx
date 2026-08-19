@@ -10,7 +10,7 @@ import { VehicleCard } from "./components/VehicleCard/VehicleCard";
 import { VehicleDetailModal } from "./components/VehicleDetailModal/VehicleDetailModal";
 import { defaultFilters, matchesFilters } from "./lib/filters";
 import { compareVehicles, type SortOption } from "./lib/sort";
-import { getAuctionTiming, getScheduleOffsetMs } from "./lib/auction";
+import { getAuctionTiming, getScheduleOffsetMs, withEffectiveBidState } from "./lib/auction";
 import styles from "./App.module.css";
 
 function App() {
@@ -30,15 +30,25 @@ function App() {
   // auction_start), so this only needs computing once, from the original imported data.
   const offsetMs = useMemo(() => getScheduleOffsetMs(initialVehicles), []);
 
-  const visibleVehicles = useMemo(
-    () =>
-      vehicles
-        .filter((vehicle) => matchesFilters(vehicle, filters))
-        .sort((a, b) => compareVehicles(a, b, sortBy, offsetMs)),
-    [vehicles, filters, sortBy, offsetMs],
+  // A vehicle our own computed timing marks "upcoming" shouldn't display bid activity —
+  // see withEffectiveBidState in lib/auction.ts for why the raw dataset can't be trusted
+  // for that on its own. Applied once here, before filtering/sorting/rendering, so every
+  // downstream consumer (price filter, price sort, the card, the bid panel) just sees
+  // already-correct data instead of each needing its own timing-awareness.
+  const effectiveVehicles = useMemo(
+    () => vehicles.map((vehicle) => withEffectiveBidState(vehicle, getAuctionTiming(vehicle, offsetMs))),
+    [vehicles, offsetMs],
   );
 
-  const openVehicle = vehicles.find((vehicle) => vehicle.id === openVehicleId) ?? null;
+  const visibleVehicles = useMemo(
+    () =>
+      effectiveVehicles
+        .filter((vehicle) => matchesFilters(vehicle, filters))
+        .sort((a, b) => compareVehicles(a, b, sortBy, offsetMs)),
+    [effectiveVehicles, filters, sortBy, offsetMs],
+  );
+
+  const openVehicle = effectiveVehicles.find((vehicle) => vehicle.id === openVehicleId) ?? null;
 
   function placeBid(vehicleId: string, amount: number) {
     setVehicles((prev) =>

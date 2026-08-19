@@ -49,23 +49,66 @@
   text-align: right;
 }
 
+.timeRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Solid color, no ring — small enough (7px) that a halo would just look like a blur.
+   aria-hidden in the markup: the "LIVE:" text right next to it already says so out loud,
+   the dot is a purely visual reinforcement of the same fact, not a second source of
+   information. Live-only, deliberately — see BUILD_LOG.md for why a "starting soon" dot
+   got cut. */
+.dotLive {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--live-dot);
+}
+
+/* Real text, not aria-hidden — unlike the dot, this is the thing that actually makes
+   "live" explicit for a screen reader user too, not just a color/shape cue for sighted
+   ones. Colored to match the dot rather than the amber countdown next to it, so the two
+   distinct meanings (status vs. urgency-to-end) read as two distinct colors. Same
+   font-size/line-height as the countdown text next to it (16.5px, not a smaller label
+   size) so the two sit on one shared baseline instead of "LIVE:" looking vertically
+   adrift from "Ends in 2h". */
+.liveLabel {
+  color: var(--live-dot);
+  font-weight: 800;
+  font-size: 16.5px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* Urgency semantics: amber = a LIVE auction counting down, never used for anything else.
    Grey = scheduled but not started (informational, not urgent). "Ending Soon" gets an
-   explicit filled badge on top of the color, not color alone. */
+   explicit filled badge on top of the color, not color alone. Bumped up from the inherited
+   body size (15px) to 16.5px, closer to the price's own weight — this is the second most
+   important thing on the card after price, and it read too quietly before. */
 .timeNormal {
   color: var(--amber);
   font-weight: 700;
+  font-size: 16.5px;
+  line-height: 1;
 }
 
 .timeSoon,
 .timeUrgent {
   color: var(--amber);
   font-weight: 800;
+  font-size: 16.5px;
+  line-height: 1;
 }
 
 .timeUpcoming {
   color: var(--slate);
   font-weight: 600;
+  font-size: 16.5px;
+  line-height: 1;
 }
 
 /* Fixed amber (not var(--amber)) — that token is tuned for "amber as text," and its

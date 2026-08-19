@@ -1151,3 +1151,404 @@ reading it in their IDE rather than taking my draft at face value.
   order into the dialog, focus return on close, click-outside-to-close). This was the
   biggest new browser mechanism introduced by the v2 port and hadn't been documented in
   `technologies.md` yet, unlike everything else in the stack.
+
+## 2026-08-19 — OpenLane brand-match exploration (later discarded)
+
+- User: "blue on blue is hard to read," lighten the colors, match openlane.com's actual
+  gradients/off-whites/blues.
+- **Fetched OpenLane's real theme stylesheet directly** rather than approximating brand
+  colors from memory — earlier in the project (day one) that had been tried and failed
+  (no public brand guide, Brandfetch 403). Pulled `https://www.openlane.com`, found their
+  enqueued theme CSS (`wp-content/themes/openlane2024/style.css`), and read their actual
+  `:root` token block: a labeled Primary/Secondary/Neutrals system (`--openlane-blue:
+  #0061FF`, `--openlane-onward-blue: #0A1B5F`, a `blue-25`–`blue-300` tint scale, and true
+  neutral greys) plus their real gradient stop pairs (`linear-gradient(..., #0061FF,
+  #0A1B5F)`), pulled straight from their CSS, not guessed.
+- Verified every candidate pairing's WCAG contrast by script before using it (same
+  discipline as every round before this) — including catching that OpenLane's own
+  `medium-silver` secondary-text token actually fails AA against the new blue-tinted
+  backgrounds, so alternate values were computed and verified instead of reused as-is.
+- Built two options: **Brand Blue** (their tokens applied directly — onward-blue text,
+  blue-tinted off-white surfaces, their brand blue as the accent, Poppins) and **Gradient
+  Hero** (same off-white base, plus their actual gradient reserved for the header, card
+  statband, and modal header only — not the ambient background, matching how OpenLane's
+  own site concentrates gradient in hero moments rather than spreading it everywhere).
+- **Building Gradient Hero surfaced a real bug before it shipped**: the amber
+  auction-urgency color and the slate secondary text both fail contrast badly against the
+  blue gradient (as low as ~1.0:1) — exactly the "blue on blue" problem this round existed
+  to fix, just reintroduced in a new spot. Fixed by overriding the statband's countdown
+  text to white and flipping the "Ending Soon" badge to a white chip with amber text, so
+  the amber meaning survived without amber-on-blue anywhere.
+- User picked Brand Blue, then flagged it still had too much blue — the page background
+  itself (`--paper`) was a pale blue tint. Changed `--paper` to OpenLane's literal
+  `--openlane-core-white` (`#FFFFFF`), matching their actual page background, and let
+  cards separate from the page via border + shadow alone instead of a color difference.
+- **User then reversed course entirely**: "get rid of all of these changes to the
+  designs. Let's start back before we made color changes. I need to be more specific."
+  Nothing in this round had touched `design/` or `src/` — it lived entirely in scratchpad
+  mockups and their Claude Artifacts — so reverting meant confirming `git status` was
+  clean, which it was. No repo changes were ever made or undone.
+- Kept here as a record of what was tried and explicitly rejected, and why: the direction
+  itself (OpenLane's real blue) wasn't the fix the user actually wanted once they saw it
+  applied — see the next entry for what they asked for instead.
+
+## 2026-08-19 — Graphite Neutral: fixing the real "blue on blue, too dark" complaint
+
+- User, more specifically this time: get rid of the OpenLane-blue exploration entirely,
+  and show two designs that are neither "blue cards on a blue background" nor "too dark" —
+  about the **shipped v2 palette**, not the discarded blue exploration.
+- **Real diagnosis, not just a tone tweak**: checked the shipped tokens' actual hex values
+  rather than assuming "blue" meant a deliberate accent color. `--ink: #10202E` has more
+  blue (46) than red (16) or green (32) in it — same story for `--paper`, `--slate`, and
+  the modal's pinned surface (`#E1E4E7`). None of these were ever a "blue" design choice;
+  they were meant to read as neutral dark navy/off-white, but the underlying hex values
+  had a real blue cast baked in the whole time. Separately, `--ink` was used as a *solid
+  fill* on the primary button, the wordmark chip, and the footer — three individually
+  reasonable choices that stacked into a page that read as heavy/dark overall.
+- Verified a full true-neutral-grey palette (R=G=B, zero hue) by script before building
+  anything, light and dark mode both — every pairing clears WCAG AA, most clear AAA.
+- Built two structurally-identical, color-only options (same card grid + modal from v2,
+  no layout changes) so the choice was purely about color/weight, not re-litigating the
+  structure:
+  - **Graphite Neutral**: true neutral grey tokens, same button/chip/footer *structure*
+    as shipped but bordered/outlined instead of solid-filled wherever `--ink` was
+    previously a fill — directly targets the "too dark" complaint without touching the
+    "blue" complaint's fix (the neutral tokens) or removing visual hierarchy.
+  - **Soft & Light**: goes further — one accent color for the entire app (the existing
+    bid-CTA green) instead of a separate "primary" hue, cards drop their border entirely
+    and separate from the page via shadow only, literal white page background.
+- User picked **Graphite Neutral**. Ported directly into `src/`, not just saved as a
+  mockup, since it's a color-token change layered on the already-shipped v2 structure —
+  much smaller in scope than the original card-grid-plus-modal port:
+  - `src/index.css`: full light/dark token block replaced with the verified neutral
+    values.
+  - `Button.module.css`'s `.primary`: solid `background: var(--ink)` → bordered
+    (`background: var(--surface); border-color: var(--ink)`) — still inverts correctly
+    in both themes since it's the same `--ink`/`--surface` pairing, just as a border
+    instead of a fill.
+  - `Footer.module.css`: solid `--ink` background → `--surface-alt` with a top border,
+    matching the "no more large dark fills" rule applied to the button.
+  - `Header.module.css`'s wordmark chip: solid fill → 1.5px outline, same rule again;
+    also caught and fixed a hardcoded `#10202e` on the pinned-white search input's text
+    color that the earlier grep-for-hardcoded-navy pass in the v2 port had missed.
+  - `PhotoThumb.module.css` and `VehicleDetailModal.module.css`: hardcoded
+    `rgb(16 32 46 / ...)` shadow/backdrop tints and the modal's pinned blue-grey surface
+    (`#E1E4E7` → `#E8E6E3`) updated to the neutral equivalents; `--paper` stayed in the
+    modal's pin block (already added during the v2 port after being missed once).
+  - Confirmed with a repo-wide grep that no hardcoded navy hex values were left anywhere
+    in `src/` before calling it done.
+- **Verification**: `npx tsc -b` and `npm run lint` clean; a Playwright pass against the
+  real running dev server confirmed the grid, modal, bidding, and footer all render the
+  new palette correctly with zero console errors. (A few card photos rendered as dark
+  placeholder boxes in the screenshots — that's the sandboxed test browser's own
+  broken-image handling since it can't reach `placehold.co` externally, an already-known
+  quirk of this specific test environment from earlier verification rounds, not a bug
+  introduced here.)
+- Saved into the repo as `design/card-grid-modal-v3-graphite.html` (the OpenLane
+  exploration was discarded and never saved, so this is v3, not v4, in the repo's own
+  sequence) and `design/README.md` updated to describe it.
+
+## 2026-08-19 — Modal contrast, bid box presence, and a live/soon status dot
+
+Three follow-up rounds of polish on the now-picked Graphite Neutral direction.
+
+- **Modal didn't contrast enough against the page.** User: the modal reads as too close
+  to white, wanted it to stand out more. The pinned modal surface was only 0.16 luminance
+  units darker than the ambient page background — barely perceptible once dimmed by the
+  backdrop. Darkened it from `#E8E6E3` to `#D9D5CD` (0.29 luminance gap now, effectively
+  doubled) while keeping `--surface-alt` (the bid box, close button) lighter than the new
+  darker `--surface` — the bid box now reads as a raised panel against a visibly darker
+  modal, rather than everything sitting at the same brightness.
+- **Bid box was plain.** Added a shadow (`var(--shadow)`, previously flat/same-plane as
+  everything else), a 4px green left-accent border matching the "Place Bid" button color,
+  and bumped the current-bid figure from 27px to 30px with tighter letter-spacing — this
+  is the one panel in the modal a buyer actually acts on, so it earns more visual weight
+  than a bordered box.
+- **Live/starting-soon status dot.** User wanted the card's auction timing to stand out
+  more, plus a colored dot: green for live, yellow for starting soon. Asked a clarifying
+  question rather than guessing at the unfinished part of the request (what color, if any,
+  for auctions starting further out) — landed on: green = live, yellow = starts within 6h
+  (mirrors the existing live-auction "soon" threshold, for consistency), no dot at all for
+  anything further out, so a lot starting in 3 days doesn't compete for attention with one
+  starting in 20 minutes.
+  - New `auctionStatusDot(timing)` in `src/lib/auction.ts` — a small, separate concept
+    from `urgencyTier`, which governs the amber countdown-text intensity, not live/upcoming
+    status. Dots are purely reinforcing (`aria-hidden`): the timing text next to them
+    ("Ends in"/"Starts in") already carries the actual information, matching the
+    established "never signal state by color alone" rule from earlier in this project.
+  - **New dedicated `--live-dot`/`--soon-dot` tokens, not reused from `--good`/`--amber`.**
+    Those two are tuned for text sitting on a tinted background of the same hue (how the
+    pill badges use them) — a small solid dot filled directly on a neutral card surface is
+    a different contrast problem and needed its own values, verified separately (light:
+    `#127A45` live / `#B8960C` soon; dark: `#34D399` / `#FDE047`).
+  - **Real physical tradeoff hit while picking the "soon" yellow**: a true bright yellow
+    that also clears 3:1 against a white/light-grey card is not really achievable — high
+    luminance and strong contrast-against-white pull in opposite directions, which is
+    exactly why the existing `--amber` token already sits as dark as it does. Picked
+    `#B8960C` (a golden yellow distinctly less orange/brown than `--amber`), landing just
+    under the 3:1 non-text-UI-component guideline (~2.5–2.8:1 depending on surface) rather
+    than pretending a fully-compliant "true yellow" was available — noted here rather than
+    silently accepted, and mitigated by the dot always being redundant with adjacent text.
+  - Verified the compiled stylesheet directly (`document.styleSheets`) to confirm both
+    dot classes resolve to the correct CSS custom properties, since no auction in a fresh
+    session is ever live yet — the existing schedule-offset system re-anchors the
+    *earliest* auction to 45 minutes from page load, so "live" doesn't become visually
+    reachable in a browser until real wall-clock time passes. Not something today's
+    change touched or needed to fix.
+- Also bumped the card's timing text from the inherited 15px body size to 16.5px — it's
+  the second most important figure on the card after price and read too quietly before.
+- Verification: `npx tsc -b` and `npm run lint` both clean throughout.
+
+## 2026-08-19 — Cut the "starting soon" dot, kept live-only
+
+- Asked directly whether yellow was actually the right call for "starting soon," rather
+  than just implementing the requested color: the real problem wasn't just contrast, it
+  was that a yellow close enough to `--amber` risked the dot's two meanings ("act now" vs.
+  "notice this later") blurring into each other — undermining the dot's whole point.
+  Recommended a hue outside the green/amber/red family instead (violet/plum).
+- User's call: simpler than either option — drop the "starting soon" state entirely, dot
+  is live-only. `auctionStatusDot` now returns `"live" | null`, `StatusDot` type
+  simplified to match, `.dotSoon` and `--soon-dot` (light + dark + the modal's pin) removed
+  everywhere rather than left dead. Confirmed with a repo-wide grep that no trace of
+  `soon-dot`/`dotSoon`/`startingSoon` remained anywhere in `src/`.
+- Verification: `npx tsc -b` and `npm run lint` clean; screenshot confirmed upcoming
+  auctions show plain timing text with no dot, live auctions still wired for the green one
+  (can't visually confirm live in this session — see the previous entry for why).
+
+## 2026-08-19 — Modal layout: gallery as a full-width row, not part of the two-column split
+
+- User: pull the photo gallery out of the two-column split and make it a full-width row
+  above the details/bid-box columns, instead of living inside the details column.
+- `VehicleDetailModal.tsx`: moved `<PhotoGallery>` out of `.detailMain` to sit directly in
+  `.body`, as a sibling of `.detailBody` rather than its first child. No new CSS needed for
+  spacing — `PhotoGallery`'s own `.gallery { margin-bottom: 16px }` already handled it,
+  since the component carries its own bottom margin regardless of where it's mounted.
+- This actually simplified the mobile story rather than complicating it: the gallery is no
+  longer part of `.detailBody`'s grid at all, so it's unconditionally full-width and first
+  at every viewport size, with no breakpoint-specific handling needed. The existing
+  "detailMain first, bid panel second, no `order` override" reasoning for the two-column
+  section underneath is untouched.
+- Verification: `npx tsc -b`/`npm run lint` clean; Playwright confirmed gallery thumbnail
+  switching and the bid flow both still work after the restructure; screenshots at desktop
+  and mobile widths both look correct — full-width gallery, then details/bid-box split
+  underneath on desktop, all three stacked in the same order on mobile.
+- **Note on `design/card-grid-modal-v3-graphite.html`**: not hand-synced with this change,
+  or the last several rounds of refinement (modal contrast, bid box shadow/accent, the
+  status dot). The mockup's job — help pick a direction — is done; `src/` is the real,
+  tested source of truth now, and keeping a static HTML file byte-for-byte in sync with
+  every subsequent micro-iteration in the live app isn't a good use of time this close to
+  sending this out for review. The mockup still accurately represents the Graphite Neutral
+  *direction*, just not every refinement made after it was picked.
+
+## 2026-08-19 — Gallery height, and the bid box's "floating" problem
+
+- User: make the gallery's active photo taller (it now spans the full modal width since
+  the last change, and 220px — tuned for the old, narrower two-column layout — looked
+  short and letterboxed at that width). Bumped `PhotoGallery`'s `.hero` from 220px to
+  340px. `PhotoGallery` is only ever mounted inside this modal, so the change is safely
+  scoped without needing a prop.
+- User, separately: the bid box "looks weird floating over to the right of the content" —
+  suggested dropping the green left-accent border and anchoring it to the bottom of the
+  modal.
+- **Real cause, not just a style tweak**: `.detailBody` used `align-items: start`, so the
+  bid box only ever took its own natural height. Once the gallery moved out of
+  `.detailMain` (previous round) and the spec grid/condition report/damage notes became
+  the *only* thing in that column, `detailMain` got noticeably taller than the compact
+  bid box, leaving it visually orphaned at the top of the right column with a large gap
+  of nothing underneath.
+- Fixed properly rather than just removing the border: `.detailBody` changed to
+  `align-items: stretch`, so the bid box now fills the same height as `detailMain`.
+  `BidPanel`'s `.panel` became a flex column, and `.form` picked up `margin-top: auto` —
+  so the actual interactive part (the bid input + Place Bid button) anchors to the
+  *bottom* of the now-taller box, exactly matching what the user asked for, instead of
+  leaving a dead gap between the meta row and the form. Removed the green left-accent
+  border per the request — the anchored-to-bottom layout gives the panel enough presence
+  on its own now.
+- Mobile is unaffected by the stretch: `.detailBody` collapses to a single column there,
+  so gallery/details/bid-box each land in their own row and just take their natural
+  height — `align-items: stretch` only has a visible effect when there are two items
+  sharing one grid row, which only happens at the two-column desktop width.
+- Verification: `npx tsc -b`/`npm run lint` clean; screenshots at desktop (bid box now
+  spans the full column height, form anchored at the bottom, no stray border) and mobile
+  (bid box stays naturally compact, no stretch artifacts) both confirmed correct.
+
+## 2026-08-19 — Full-screen photo lightbox: a genuine nested modal
+
+- User: add a control on the hero photo to expand it full-screen, and explicitly flagged
+  the real risk — "we're kind of nesting modals into modals here" — asking for
+  accessibility to be treated seriously, not bolted on after.
+- **Built on a second native `<dialog>`, nested as a DOM descendant of the vehicle
+  modal's own `<dialog>`**, betting on the platform to handle the hard parts rather than
+  hand-rolling them:
+  - The browser's top-layer stacking renders the lightbox above the vehicle modal with no
+    manual `z-index` needed, regardless of DOM nesting depth.
+  - Calling `showModal()` on the lightbox makes everything NOT contained within it inert —
+    including the vehicle modal's own thumbnails, spec grid, and bid form, even though
+    they're the lightbox's own ancestor's content, not siblings. Verified directly: while
+    the lightbox is open, clicking a thumbnail behind it does nothing at all.
+  - Escape closes only the topmost dialog (the lightbox), leaving the vehicle modal open —
+    also native, no custom key handling needed.
+  - All three of the above were confirmed by test, not assumed from reading the spec.
+- **What still had to be built by hand, same categories as every dialog in this app**: an
+  accessible name (`aria-label` directly on the dialog — no visible heading to point
+  `aria-labelledby` at in a pure image viewer), focusing the dialog itself first on open
+  so the name is announced before the close button, and returning focus specifically to
+  the *expand button* (not wherever focus was before the vehicle modal opened) when the
+  lightbox closes.
+- **Two problems specific to nesting, not present in any single-level dialog in this app
+  so far**:
+  1. The vehicle modal's own click-outside-to-close handler listens on its `<dialog>`
+     element. Because the lightbox is a DOM *descendant* of that same element, a click
+     anywhere in the lightbox bubbles up through it — without `event.stopPropagation()`
+     in the lightbox's own click handler, clicking anywhere in the lightbox (including
+     just to dismiss it) would also fire the vehicle modal's handler and close the whole
+     thing underneath it. Verified this specific failure mode by test before confirming
+     the fix.
+  2. The vehicle modal's existing bounding-box click-outside technique doesn't transfer:
+     that technique exists because the vehicle modal is *smaller than the viewport*, so
+     there's real "outside" space to click. The lightbox IS the viewport (100vw/100vh) —
+     every click is inside its bounding rect by definition, so a bounding-box check would
+     never fire. Used `event.target === dialog` instead, which is correct here
+     specifically *because* this dialog centers a smaller image inside a much larger
+     element (unlike the vehicle modal, which has no padding of its own) — a click landing
+     directly on the dialog element, not the image or the close button, unambiguously
+     means the empty space around the photo was clicked.
+  - Only shown when there's an actual loaded photo (`!activeFailed`) — expanding a
+    text-fallback placeholder to full screen has nothing to show.
+- Verification: `npx tsc -b`/`npm run lint` clean. Scripted Playwright pass covering the
+  nesting-specific behavior, not just "does it open": two dialogs open at once, a
+  thumbnail click behind the lightbox is blocked (inert), Escape closes only the lightbox
+  (vehicle modal dialog count back to 1), focus lands back on the expand button, clicking
+  empty lightbox space closes only the lightbox (not the vehicle modal underneath — the
+  specific bug `stopPropagation` exists to prevent), clicking the image itself does not
+  close it, and the close button works with correct focus return. Zero console errors
+  throughout. Screenshots confirm the expand control and the full-screen lightbox both
+  render correctly.
+
+## 2026-08-19 — Buy It Now button, laid out like popular auction sites
+
+- User: add an actual button for the Buy It Now option, laid out the way popular auction
+  sites present it. Previously `buy_now_price` was only shown as inert text in a meta
+  row — no way to act on it at all.
+- **Layout matches the standard convention** (eBay and similar): bid form first, then an
+  "or" divider (two horizontal rules flanking the word), then Buy It Now as a full-width
+  button below it — presented as two alternative paths to the same vehicle, not stacked
+  as if both applied simultaneously.
+- **New `secondary` variant on the shared `Button` component**: same fixed green as the
+  existing `.cta` (`#1B7A4D`) since both buttons lead to the same outcome — acquiring the
+  vehicle — but outlined instead of filled, so Buy It Now doesn't compete with Place Bid
+  for being "the" primary action. Fixed, not `var(--good)`, for the same cross-theme
+  reason `.cta` already uses a fixed color.
+- **Reuses the existing bid mechanism** rather than a separate purchase flow — clicking
+  Buy It Now calls the same `onPlaceBid(vehicleId, amount)` callback with
+  `buy_now_price`, and shows a distinct "Bought now for $X" confirmation instead of "Bid
+  placed at $X." This matches the prototype's existing, documented scope decision for
+  bidding (in-memory, no separate checkout) rather than introducing a new one — a full
+  "mark as sold, auction ends immediately" state machine wasn't asked for and isn't
+  needed to demonstrate the interaction.
+- Restructured `BidPanel`'s layout to keep the "anchor the interactive part to the bottom
+  of the stretched panel" behavior from the last round working correctly: the bid form,
+  message, divider, and Buy It Now button are now grouped in one `.actions` wrapper that
+  carries the `margin-top: auto` (previously on `.form` alone, which would have left the
+  new divider/button floating below the anchored form instead of anchored with it).
+- Verification: `npx tsc -b`/`npm run lint` clean. Playwright confirmed the button renders
+  with the correct price, clicking it updates the current bid to the buy-now price,
+  increments the bid count, and shows the correct confirmation message — zero console
+  errors. Screenshots confirmed the layout at both desktop and mobile widths.
+
+## 2026-08-19 — Undid the stretched bid box; natural height, normalized spacing
+
+- User: the bid box looks weird — reads like it has a set height — and asked for it to
+  grow naturally with its content, plus normalized spacing between its elements.
+- **Direct reversal of a decision from two rounds ago.** `.detailBody`'s
+  `align-items: stretch` (added specifically to make the bid box match detailMain's
+  height) went back to `align-items: start`, and `BidPanel`'s `.actions` group lost the
+  `margin-top: auto` that anchored it to the bottom of that stretched space. In hindsight
+  that whole approach *was* an artificial set height — it just came from a sibling
+  column's height instead of a literal CSS `height` value, which is exactly what it
+  looked like once more content (Buy It Now) got added into the anchored group.
+- **Normalized spacing with `gap` instead of scattered margins.** Every one-off spacing
+  value (`.metaRow`'s `margin: 10px 0`, `.msg`'s `margin-top: 8px`, `.divider`'s
+  `margin: 14px 0`) is gone. `.panel` is now a `gap: 16px` flex column across its three
+  logical groups (price, meta row, actions), and `.actions` is its own `gap: 10px` flex
+  column across the form/message/divider/buy-now-button. The current-bid label and figure
+  got pulled into a new `.priceBlock` wrapper with its own tight `gap: 2px` — without it,
+  giving the outer panel one uniform gap would have pushed the label away from its own
+  value by the same amount as every unrelated section, breaking that pairing.
+- Verification: `npx tsc -b`/`npm run lint` clean. Screenshots of both a Buy-It-Now
+  vehicle and a bid-only vehicle confirm the box now takes its own compact, natural
+  height in both cases, with even, consistent spacing throughout.
+
+## 2026-08-19 — Live auctions on load, and a real data-integrity bug fixed
+
+- User: wanted a few live auctions visible immediately (to actually see the live status
+  dot without waiting), and separately noticed some auctions showing "Starts in 29m" next
+  to existing bids — asked to double-check the data.
+- **Checked the raw dataset directly rather than guessing at the cause.** Confirmed
+  `current_bid`/`bid_count` in `data/vehicles.json` are generated completely independently
+  of `auction_start` — vehicles scheduled at the very end of the 6.5-day spread have bid
+  activity too, same as ones at the very start. This isn't something our offset math
+  broke; the raw data was never temporally consistent to begin with, so no single vehicle
+  is uniquely "wrong" — the *display* logic needed to derive correct state from computed
+  timing, not trust the raw fields directly.
+- **Fixed the offset anchor** (`getScheduleOffsetMs`) to place "now" 22 hours *after* the
+  earliest auction's original start instead of 45 minutes *before* it. Every vehicle whose
+  original start falls within that same 22-hour window is live at load, spread across the
+  full urgency range (about to end, ending soon, just started) rather than clustered in
+  one tier — about 13% of the 200-vehicle catalog (26 vehicles) live on load, verified by
+  script, without waiting on real wall-clock time or pushing anything into "ended."
+- **New `withEffectiveBidState(vehicle, timing)`** in `lib/auction.ts`: if a vehicle's
+  computed status is "upcoming," its bid fields are overridden to `current_bid: null,
+  bid_count: 0` for display — an auction that hasn't started has no bids yet, regardless
+  of what the static dataset happens to say. Applied once in `App.tsx`, before
+  filtering/sorting/rendering (`effectiveVehicles`), so price filtering, price sorting,
+  the card, and the bid panel all see already-correct data without each needing their own
+  timing-awareness — `effectivePrice` (used by both filter and sort) already falls back to
+  `starting_bid` correctly once `current_bid` is genuinely `null`, no changes needed to
+  `filters.ts`/`sort.ts` at all.
+- **Caught a follow-on inconsistency before shipping**: fixing the display alone wasn't
+  enough — the bid form was still fully functional on upcoming auctions, meaning a user
+  could place a "bid" on a listing the UI had just finished insisting had none. Closed that
+  gap too: `VehicleDetailModal` now derives `canBid = timing?.status === "live"` and passes
+  it to `BidPanel`, which renders neither the bid form nor Buy It Now when `false` —
+  instead a plain "Bidding opens when the auction starts" message. Not scope creep so much
+  as the fix being incomplete without it: "no bids exist yet" and "you can still place one"
+  can't both be true at once.
+- Verification: `npx tsc -b`/`npm run lint` clean. Scripted check confirmed live-count
+  (26/200), zero upcoming cards showing nonzero bid counts, Place Bid present with no
+  "Bidding opens" message on a live vehicle, and the reverse (no Place Bid, "Bidding opens"
+  shown, "0 bids") on an upcoming one. Screenshots confirm the green live dot rendering
+  correctly on multiple cards in the grid, and the upcoming modal's fully consistent
+  "Starting Bid / 0 bids / Bidding opens when the auction starts" state.
+
+## 2026-08-19 — Mobile header order, and a "LIVE:" label on the status dot
+
+User's last two requests before wrapping up for engineering review.
+
+- **Mobile header**: the search bar was right-aligned and a fixed-ish width even on
+  narrow screens; asked for it full-width/left-aligned with Sign In/Register moved above
+  it, mobile only. Used `order` in an 860px media query (the same breakpoint the rest of
+  the app already uses for mobile) on `.search`/`.actions` rather than changing the actual
+  DOM order — desktop's existing order (search snug against the actions group via
+  `margin-left: auto`) needed to stay exactly as-is, and the two breakpoints wanted
+  genuinely different orders, not just a mobile-only visual tweak layered on top of one
+  shared order. `.search` also drops its `max-width`/`margin-left` and goes
+  `width: 100%` on mobile. Verified desktop renders unchanged and mobile shows
+  actions-then-search as requested.
+- **"LIVE:" label**: the live status dot was `aria-hidden`, purely decorative, redundant
+  with the countdown text next to it. Added real, non-hidden "LIVE:" text in front of the
+  dot — colored to match `--live-dot` (green) rather than the amber countdown text right
+  after it, so the two distinct meanings (status vs. urgency-to-end) read as two distinct
+  colors instead of one. This is also a genuine accessibility improvement, not just a
+  visual one: a screen reader now hears "LIVE: Ends in 2h" explicitly, where before
+  "live-ness" was only ever implied by amber color/the (hidden) dot, never actually said.
+- Verification: `npx tsc -b`/`npm run lint` clean. Screenshots confirmed the mobile
+  header order and full-width search, desktop unchanged, and "● LIVE: Ends in 2h"
+  rendering correctly across multiple live cards in the grid.
+- **Follow-up, same round**: user caught that "LIVE:" and "Ends in 2h" weren't on a
+  shared baseline. Root cause was the label starting at a smaller 12px "meta label" size
+  while the countdown text next to it is 16.5px — normalized `.liveLabel` to the same
+  16.5px, and added `line-height: 1` to it and all four `.time*` classes so a differing
+  inherited line-height (1.5 from `body`) couldn't reintroduce the same kind of vertical
+  drift at matching font sizes. Verified with a screenshot: dot, "LIVE:", and the
+  countdown text now sit on one visual line.
