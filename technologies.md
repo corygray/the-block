@@ -1,7 +1,7 @@
 # Technologies
 
-A plain-English reference for the tech stack used in this project. Written while learning
-React, Vite, and TypeScript for the first time — updated as new tools get added.
+A plain-English reference for the tech stack used in this project — updated as new tools
+get added.
 
 ---
 
