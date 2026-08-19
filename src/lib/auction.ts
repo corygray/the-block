@@ -63,6 +63,21 @@ export function formatAuctionTiming(timing: AuctionTiming): string {
   return timing.status === "live" ? `Ends in ${duration}` : `Starts in ${duration}`;
 }
 
+export type UrgencyTier = "urgent" | "soon" | "normal" | "upcoming";
+
+// Amber is reserved strictly for "live and counting down" — a scheduled-but-not-started
+// auction isn't urgent, so it (and an ended one, which can't happen at load time but is
+// handled the same way defensively) gets the neutral "upcoming" tier instead of an amber
+// one. "Ending Soon" gets an explicit filled badge on top of the color change, layered on
+// by the caller, not signaled by color alone.
+export function urgencyTier(timing: AuctionTiming): UrgencyTier {
+  if (timing.status !== "live") return "upcoming";
+  const hoursUntil = timing.msUntil / (60 * 60 * 1000);
+  if (hoursUntil <= 1) return "urgent";
+  if (hoursUntil <= 6) return "soon";
+  return "normal";
+}
+
 // Ending-soonest-first: live auctions sort by time-until-end (ascending); upcoming ones
 // come after every live one (they aren't "ending soon" if they haven't started) and sort
 // among themselves by time-until-start; ended auctions sort last of all.

@@ -14,3 +14,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  padding: 22px 20px;
+}

@@ -1,146 +1,85 @@
-<p align="center">
-  <img src="docs/the_block_repo.png" alt="The Block challenge hero image" width="960" />
-</p>
-
 # The Block
 
-### A coding challenge from OPENLANE
+A buyer-side vehicle auction marketplace, built as a take-home coding challenge for OPENLANE. Forked from [kar-dmp/the-block](https://github.com/kar-dmp/the-block).
+
+**Two docs worth reading alongside this one:**
+
+- [`BUILD_LOG.md`](BUILD_LOG.md) — a dated, decision-by-decision log of the entire build: what I built first, every bug I hit and how I found/fixed it, and the reasoning behind every product and design call. This is the most complete record of *why* the project looks the way it does, not just what's in it.
+- [`technologies.md`](technologies.md) — a plain-English explainer of each piece of the stack (React, Vite, TypeScript, CSS Modules, etc.) and why it was chosen, written while learning several of these tools for the first time.
 
 ---
 
-OPENLANE powers one of the world's largest digital marketplaces for used vehicles. Every day, thousands of vehicles move through our platform - inspected, listed, auctioned, and sold. Your job is to interpret what we do and bring a working prototype to life.
+## How to Run
 
-We're hiring for a team that builds fast, thinks independently, and takes ownership. This challenge is part of that process.
+**Prerequisites:** Node.js `^20.19.0` or `>=22.12.0` (required by Vite 8 — check with `node --version`; older LTS releases like 18.x won't run it) and npm.
 
-## The Challenge
-
-Build the **buyer side of a vehicle auction platform as a web or mobile application**. We've included a dataset of 200 vehicles in [`data/vehicles.json`](data/vehicles.json), each listed by a selling dealership.
-
-A buyer should be able to browse inventory, inspect vehicle details, and place bids. That's the core experience. How you structure the product and how far you take it is up to you.
-
-## Core Requirements
-
-- Browse and search the vehicle inventory
-- Vehicle detail views with specs, condition, damage notes, selling dealership, and photos
-- A bidding experience where a buyer can place bids on vehicles
-- A usable experience that works well on the platform you choose
-- Clear instructions in your README for how to run the project locally
-
-## Assumptions You Can Make
-
-- This is a prototype, not a production launch.
-- Please spend no more than 3-4 hours of work on this. If you spend more, that's your call, but we do not expect a fully built marketplace.
-- Use any framework, language, or stack.
-- If you want stack examples that fit this challenge, React + Vite is a good web option, and SwiftUI for iOS or Compose for Android are reasonable native mobile examples. None of these are required.
-- You may use AI tools and coding assistants, and their use is encouraged. Be ready to explain how you used them, what decisions you made, and what parts of the implementation you would refine.
-- Authentication and user accounts are **not required**.
-- A frontend-only implementation is completely acceptable.
-- You do **not** need to build seller workflows, checkout, payments, or dealer admin tooling.
-- Auction timestamps in the dataset are synthetic scheduling data. If you want to show countdowns or "live" states, it's fine to normalize them relative to "now" in your prototype.
-- Make reasonable product decisions, document your assumptions, and optimize for clarity over surface area.
-
-## Minimum Bar
-
-At a minimum, we want to see:
-
-- Inventory browsing and search
-- A clear vehicle detail experience
-- A bid flow with updated visible state
-- A usable experience on desktop and mobile
-- A repo we can clone and run by following your README
-
-## Stretch Ideas
-
-These are optional. Only do them if the basics are solid.
-
-- We care more about judgment than about any specific extra feature.
-- If you go beyond the basics, focus on improvements that make the buyer experience clearer, more useful, or more trustworthy.
-- That could show up in product decisions, UX details, implementation quality, or any other thoughtful extension that fits the timebox.
-
-## What to Submit
-
-1. **Fork this repo** to your own GitHub account
-2. Complete the challenge work in your fork
-3. Include a **README** in your repo with setup instructions and notable decisions
-4. When you're finished, share the link to your repo with your contact at **OPENLANE**
-
-We've included a [submission template](SUBMISSION.md) if you want a starting point.
-
-We should be able to clone your repo and have it running locally by following your README.
-
-## Timeline
-
-You have **5 days** from when you receive this challenge to submit it.
-
-This is not a speed run. We care more about your decisions and tradeoffs than the total number of features.
-
-## What Happens Next
-
-After you submit, we'll schedule a **45-60 minute walkthrough** where you'll screen-share and walk us through what you built. More details are in [`WALKTHROUGH.md`](WALKTHROUGH.md).
-
-## How We Evaluate
-
-We're not checking boxes. Here's what we care about:
-
-| | What we're looking at |
-|---|---|
-| **Product thinking** | Did you make smart decisions about what to build and how it should work? Does the UX make sense? |
-| **Craft** | Does it look and feel intentional? The details matter - design, layout quality, polish. |
-| **Technical quality** | Is the code clean, well-structured, and easy to follow? |
-| **Judgment** | Did you scope the work well for the time budget and make sensible tradeoffs? |
-| **Workflow** | Can you walk us through how you built it and why? (assessed in the walkthrough) |
-
-## The Data
-
-The vehicle dataset is at [`data/vehicles.json`](data/vehicles.json). Each vehicle includes:
-
-- Lot number, VIN, make, model, year, and trim
-- Specs (engine, transmission, drivetrain, fuel type, odometer)
-- Condition (grade, report, damage notes, title status)
-- Auction details (starting bid, reserve price, buy now price, auction start time)
-- Current bid and bid count (some vehicles already have active bids)
-- Location (city and province)
-- Selling dealership
-- Placeholder image URLs
-
-Here's what a single vehicle looks like:
-
-```json
-{
-  "id": "3cc3b89e-68b0-479e-af39-bca6251ea0b4",
-  "vin": "TRD7L1KS0HNB5X3K3",
-  "year": 2023,
-  "make": "Ford",
-  "model": "Bronco",
-  "trim": "Big Bend",
-  "body_style": "SUV",
-  "exterior_color": "Burgundy",
-  "interior_color": "Beige",
-  "engine": "2.7L EcoBoost V6",
-  "transmission": "automatic",
-  "drivetrain": "4WD",
-  "odometer_km": 47731,
-  "fuel_type": "gasoline",
-  "condition_grade": 3.8,
-  "condition_report": "Average condition. Has some visible wear on high-touch surfaces. Engine and transmission perform within normal parameters.",
-  "damage_notes": [
-    "Scratch on liftgate",
-    "Minor rust on wheel wells",
-    "Paint peeling on roof rack"
-  ],
-  "title_status": "clean",
-  "province": "Ontario",
-  "city": "Toronto",
-  "auction_start": "2026-04-05T14:00:00",
-  "starting_bid": 14500,
-  "reserve_price": 25000,
-  "buy_now_price": null,
-  "images": ["https://placehold.co/800x600?text=2023+Ford+Bronco+Photo+1", "..."],
-  "selling_dealership": "King City Auto",
-  "lot": "A-0043",
-  "current_bid": 22800,
-  "bid_count": 16
-}
+```bash
+git clone https://github.com/corygray/the-block.git
+cd the-block
+npm install
+npm run dev
 ```
 
-The data is synthetic but meant to feel realistic. Use it however you want. Should you need reasonable accommodation, please reach out to careers@openlane.com
+Vite prints a local URL once the dev server starts — by default `http://localhost:5173/`, but if that port's already taken it'll pick the next free one and print whichever URL actually came up. Open that URL in a browser.
+
+There's no `.env` file, API key, backend process, or database to stand up — the vehicle dataset (`data/vehicles.json`) is imported directly into the app as a typed module at build time, so there's nothing to seed or connect to before it'll run. (`scripts/generate_vehicles.mjs` is how that dataset was originally generated by OPENLANE — it's not part of running the app and doesn't need to be run again.)
+
+Other available scripts:
+
+- `npm run build` — type-checks (`tsc -b`) and produces a production build
+- `npm run lint` — runs `oxlint`
+- `npm run preview` — serves the production build locally
+
+## Time Spent
+
+Roughly 3-4 hours of focused work, spread across a few sessions: initial build (browsing, search, filtering, sorting, and a working bid flow), a full accessibility and color pass, and a second design round that reworked the vehicle card and detail view after living with the first version.
+
+## Assumptions and Scope
+
+- **Frontend-only, no auth.** Both explicitly allowed by the challenge brief. There's no backend or database — the dataset is imported as a static, typed module.
+- **Bids live in React state only** (not `localStorage`, not a mock backend). Placing a bid updates the UI immediately, but state resets on a page refresh. This was a deliberate trade-off to stay inside the timebox rather than an oversight.
+- **Auction end time is assumed to be 24 hours after `auction_start`.** The dataset only provides a start timestamp, not a duration or end time.
+- **Auction timestamps are normalized against "now."** The dataset's `auction_start` values are synthetic and generated once, so read literally every auction would already be over. Every vehicle's schedule is shifted by one fixed offset (preserving the relative spacing the dataset authored) so the earliest auction re-anchors to shortly after the app loads.
+- **VIN and selling dealership are shown in the vehicle detail view, not the card grid.** A dealer scanning inventory needs price, condition, and timing to decide whether to look closer — VIN and dealer name are record-keeping details for after that decision, not before it.
+- **No seller workflows, checkout, payments, or dealer admin tooling** — out of scope per the challenge brief.
+
+## Stack
+
+- **Frontend:** React 19 + Vite 8 + TypeScript, CSS Modules for component styling
+- **Backend:** None — frontend-only, per the challenge's explicit allowance
+- **Database:** None — the dataset is imported directly as a typed module; bid state lives in memory only
+
+See [`technologies.md`](technologies.md) for a plain-English explainer of each piece of the stack and why it was chosen.
+
+## What I Built
+
+A buyer can browse the full 200-vehicle inventory in a card grid, filter by make, body style, price range, and title status, sort by price/year/ending-soonest, and search by make, model, trim, VIN, or lot number. Clicking a card opens an accessible modal with the full vehicle detail — photo gallery, condition report, damage notes, specs, and a bid panel — where a buyer can place a bid and see the vehicle's current bid and bid count update immediately, both in the modal and back in the card grid underneath it.
+
+The app works on both desktop and mobile: the filter sidebar and sort toolbar collapse to a stacked layout under 860px, the card grid reflows fluidly at any width, and the modal goes full-screen under 640px with its content reordered so price/bid info reads sensibly on a small screen.
+
+## Notable Decisions
+
+- **Card grid + native `<dialog>` modal, not a dense table.** The first version was a dense sortable table with an inline expand-in-place accordion for detail. After living with it, it felt crowded for its actual use case (a dealer deciding what's worth a closer look), so I redesigned the collapsed view around a "dealer workflow" persona: price and auction timing lead, VIN/dealer name move to detail-only, and damage becomes a quick flag instead of a full list inline. The detail view moved from an inline expand to a popover modal — a more expected pattern for a card grid than for a table row, which I'd specifically avoided a modal for earlier in the project.
+- **Built the modal on the native `<dialog>` element**, not a hand-rolled overlay `div`. It provides a real focus trap, Escape-to-close, and an implicit `role="dialog"` for free. What I still had to build: an accessible name (`aria-labelledby`), focusing the dialog itself first so its name is announced before any control inside it, returning focus to whichever card opened it when it closes, and click-outside-to-close.
+- **A real urgency-tier system for auction timing**, not one flat color. Amber is reserved strictly for a live, counting-down auction; a "Ending Soon" badge only appears inside the final hour; an auction that hasn't started yet gets a neutral treatment instead of competing for the same visual urgency.
+- **Accessibility was treated as a first-class requirement, not a pass at the end.** Every color decision was checked against WCAG contrast ratios (not just "looks fine"), state is never signaled by color alone (badges carry text/shape, not just hue), form controls are properly labeled, and the bid confirmation message is a live region so a screen reader announces it.
+- **In-memory bid state.** Satisfies "a bid flow with updated visible state" without adding persistence complexity the prototype doesn't need.
+
+Full dated reasoning for every decision — including a few real bugs I found and fixed along the way — is in [`BUILD_LOG.md`](BUILD_LOG.md). The design exploration itself, including two rounds of interactive HTML mockups, is in [`design/`](design/).
+
+## Testing
+
+- `npx tsc -b` and `npm run lint` (oxlint) kept clean throughout, not just at the end.
+- Scripted, functional verification with Playwright against the real running dev server (not just an HTTP 200 check): clicking a card opens its modal with the right title announced, cycling gallery thumbnails works, placing a bid updates and shows a confirmation, closing the modal via Escape, the backdrop, and the close button all return focus to the exact card that opened it, and the filter sidebar/sort toolbar still work at a mobile viewport width — with zero console errors throughout.
+- Manual click-through in a real browser at desktop, tablet, and mobile widths.
+- Contrast checked by hand against both light and dark mode for every new color, since a value that looks fine in whichever theme happens to be active isn't proof it's accessible in the other one.
+
+## What I'd Do With More Time
+
+- Revisit the color choices for the design
+- Autocomplete for search bar
+- A shareable URL per vehicle (e.g. `/vehicles/:id`) instead of modal-only state, so a link to a specific lot could be sent to someone else.
+- Persist bids past a refresh — either `localStorage` for a quick win, or a small mock API to practice a more realistic data-fetching/loading-state pattern.
+- An automated accessibility audit (e.g. `axe-core`) layered on top of the manual contrast checks, and a small formal test suite (the Playwright checks this round were real but scratch scripts, not committed, repeatable tests).
+- Real photo handling — the dataset's `images` are `placehold.co` URLs; a production version would want actual hosted images with responsive `srcset`s.
+- A watchlist, since the header already has a placeholder nav link for one.

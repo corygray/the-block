@@ -100,6 +100,28 @@ instead, which showed the content was there all along — it had just been pushe
 visible browser window by the newly-expanded accordion. A cropped screenshot right after
 a layout change is a common false alarm, not proof of a real bug.
 
+## The `<dialog>` Element
+
+**What it is:** A built-in HTML element for popovers and modals — no library needed. Calling
+its `.showModal()` method (instead of just toggling CSS visibility) gets you several things
+the browser handles automatically: keyboard focus gets trapped inside it while it's open,
+pressing Escape closes it, it renders above everything else on the page regardless of
+`z-index`, and it's announced to screen readers as a dialog without needing to add
+`role="dialog"` by hand.
+
+**Why we chose it over a hand-built `<div>` overlay:** the vehicle detail view moved from an
+inline expand-in-place panel to a popover modal in the second design round. A `<div>`-based
+modal would need all of the behavior above built and tested by hand (a real focus trap is
+easy to get subtly wrong); `<dialog>` gets it for free and is supported in every current
+browser.
+
+**What still had to be built by hand:** the browser doesn't do everything. We still had to
+add an accessible name (`aria-labelledby` pointing at the vehicle's title), move focus to
+the dialog itself first so that name gets announced before any button inside it, return
+focus to whichever card opened it once it closes (native `<dialog>` does **not** do this on
+its own — without handling it, focus silently drops to `<body>`), and write our own
+click-outside-to-close behavior.
+
 ## Application State (Bids)
 
 **What it is:** Where the app keeps track of "what's true right now" — in this case,
@@ -109,7 +131,7 @@ current bid amounts and bid counts per vehicle.
 than `localStorage` or a backend. This is the simplest option that satisfies the
 requirement ("a bid flow with updated visible state") without adding persistence
 complexity that isn't needed for a prototype. Trade-off: bids reset on page refresh —
-called out as an intentional decision in the README/SUBMISSION doc.
+called out as an intentional decision in the README's "Assumptions and Scope" section.
 
 ---
 

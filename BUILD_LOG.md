@@ -1010,3 +1010,144 @@ browsing, search, filtering, sorting, the accordion, and bidding all work end-to
   on" for focus, cross-check the trimmed-down version against the previous round's full
   page before calling it finalized — it's easy for scope to quietly narrow along with the
   visual focus.
+
+## 2026-08-19 — Ported the v2 design (card grid + modal) into the real app
+
+Replaced the dense-row accordion with the finalized card grid + accessible modal, matching
+`design/card-grid-modal-v2.html` exactly rather than reinterpreting it.
+
+- **`src/lib/auction.ts`**: added `urgencyTier(timing)` — `urgent` (≤1h left and live),
+  `soon` (≤6h), `normal` (live, more time), `upcoming` (not live at all, including the
+  `ended` status, which can't happen at load time but is handled the same defensive way).
+  Pure function over the existing `AuctionTiming` type, no new state.
+- **`VehicleCard`** (new) replaces `VehicleRow`'s collapsed view: full-width price/timer
+  statband first, then photo, title/trim, title-status + condition badges, a vitals line
+  (odometer, city/province, drivetrain, and a damage flag only if `damage_notes.length >
+  0`), and a footer with the reserve pill + bid count. VIN and dealer name are dropped
+  entirely here — expanded/modal-only now, per the dealer-workflow reprioritization from
+  the design round. The "Ending Soon" badge uses the fixed `#96600A`, not `var(--amber)` —
+  same dark-mode fill-contrast bug already caught once in the mockup, avoided here by
+  copying the mockup's CSS value directly instead of reaching for the token.
+- **`VehicleDetailModal`** (new) replaces `VehicleRow`'s inline accordion + the old
+  `VehicleDetail` component, built on native `<dialog>`: `showModal()`/`close()` for the
+  free focus trap and Escape-to-close, `tabIndex={-1}` + `.focus()` on open so the title is
+  announced before any control, a single `close` event listener that both clears
+  `openVehicleId` and returns focus to the triggering card (covers Escape, backdrop, and
+  the close button in one place), and a bounding-box click check for backdrop-to-close
+  (the dialog has no padding of its own, so `event.target === dialog` would never fire).
+  Reuses the existing `PhotoGallery` and `BidPanel` components unchanged in structure —
+  **the token-pin block on `.modal` includes `--paper` this time**, even though nothing in
+  the current markup reads it directly, specifically because that's the exact token that
+  got missed once already in the design-mockup round and caused a near-invisible button.
+- **`BidPanel`**: three small adjustments to match the modal design exactly rather than the
+  old accordion's version — submit button switched from `variant="primary"` to
+  `variant="cta"` (green, fixed-contrast, sidesteps the `--paper` bug class entirely since
+  `.btn-cta` uses literal colors, not theme tokens); `.panel`'s background changed from
+  `var(--surface)` to `var(--surface-alt)` so it visually separates from the modal's own
+  `--surface` background (in the old accordion, panel and background were intentionally
+  the same shade — a bordered-card-on-matching-surface look — but the modal mockup
+  deliberately used two different tones); `.input`'s background changed from
+  `var(--surface-alt)` to `var(--surface)` to keep standing out against the now-changed
+  panel background, matching the mockup's own bid-box input styling.
+- **`PhotoThumb`**: widened `width`/`height` props from `number` to `number | string` (the
+  card needs `width="100%"`), and dropped its own `border-radius` — it's now only ever used
+  inside `VehicleCard`'s photo slot, which already clips corners via the card's own
+  `border-radius` + `overflow: hidden`, so a rounded corner on the thumb itself would be
+  redundant (and mismatched — the mockup's card photo is flush, `border-radius: 0`).
+- **`src/index.css`**: added `--shadow-lg` (light and dark values) — the modal's elevation
+  needs a stronger shadow than the existing `--shadow` token, which was tuned for cards.
+- **`App.tsx`**: replaced the `VehicleRow` list + `expandedId` accordion state with a
+  `.grid` of `VehicleCard`s and a single shared `VehicleDetailModal` instance (matching the
+  mockup's "one dialog, not one per card" structure). New state: `openVehicleId` (still
+  keyed by id, not index, same reasoning as before) and a `lastTriggerRef` that captures
+  `event.currentTarget` at click time — same technique the mockup used for `lastTrigger`,
+  necessary because native `<dialog>` doesn't return focus to whatever opened it on its
+  own.
+- **Deleted `VehicleRow` and `VehicleDetail`** entirely (component + CSS module each) —
+  fully superseded, not left around unused. `VehicleDetail.module.css`'s `order`-based
+  desktop/mobile swap died with it; the modal doesn't need an equivalent, since its content
+  order (detail first, bid box second) is already correct at every width by construction.
+- **Verification**: `npx tsc -b` and `npm run lint` (oxlint) both clean. Playwright script
+  (in the scratchpad, not a project dependency) drove the real running dev server: opened a
+  card's modal, confirmed the announced title, cycled a gallery thumbnail, placed a bid and
+  read back the confirmation message, closed the modal three separate ways (Escape,
+  backdrop click, close button) and confirmed focus returned to the exact card that opened
+  it each time, resized to a mobile viewport and confirmed the filter sidebar and sort
+  toolbar are still there — zero console errors throughout. Screenshots confirmed the
+  rendered grid, modal, and mobile modal all match `design/card-grid-modal-v2.html`
+  visually, not just functionally.
+- Dev server was stopped immediately after verification, per the standing rule.
+
+## 2026-08-19 — Modal: split VIN and location onto separate lines
+
+- User: on the vehicle detail view, break the dealership/city/province line onto its own
+  line, separate from VIN.
+- `VehicleDetailModal`'s combined `VIN {vin} · {dealer} · {city}, {province}` line split
+  into two separate `.subLine` elements — VIN keeps the `mono` treatment (it's the one
+  actual "paperwork" figure on that line), the dealership/location line doesn't need it
+  (it's prose, not digits). Added `.subLine + .subLine { margin-top: 2px }` so the two
+  lines read as a tight, related pair rather than full paragraph spacing apart.
+- Verified with a Playwright screenshot against the live dev server; `tsc -b`/`oxlint`
+  stayed clean.
+
+## 2026-08-19 — README rewritten from OPENLANE's brief into a real submission README
+
+- User wants to make sure the project is actually submission-ready, not just
+  feature-complete — checked the repo against `README.md`'s own "How We Evaluate" table
+  and the explicit ask ("We should be able to clone your repo and have it running locally
+  by following your README").
+- Found the real gap: `README.md` had never been touched in this fork — git history
+  confirmed every commit that ever touched it predates the fork itself. It was still
+  word-for-word OPENLANE's challenge brief, with no run instructions, no notable
+  decisions, nothing fork-specific. `SUBMISSION.md` was also still the blank template.
+- Rewrote `README.md` using `SUBMISSION.md`'s exact section structure (How to Run, Time
+  Spent, Assumptions and Scope, Stack, What I Built, Notable Decisions, Testing, What I'd
+  Do With More Time) — per `SUBMISSION.md`'s own instruction ("use this as a starting
+  point for your repo's README"), filled in from the real project history in this file
+  and `technologies.md` rather than generic boilerplate. Kept the original hero image.
+- **Time Spent asked directly of the user** rather than estimated — this is a field only
+  they can answer honestly for the walkthrough conversation, not something derivable from
+  session logs spanning multiple calendar days with unknown gaps between them.
+- Deleted `SUBMISSION.md` once its content was merged into `README.md` — leaving the
+  blank template sitting in the repo next to a filled-in README would read as unfinished
+  to a reviewer, not as "kept for reference."
+
+## 2026-08-19 — README polish: line wrapping, a real "How to Run," doc pointers
+
+Three follow-up rounds on the freshly-rewritten README, each from the user actually
+reading it in their IDE rather than taking my draft at face value.
+
+- **Fixed hard-wrapped paragraphs.** The first draft wrapped prose at ~80 characters with
+  real newlines, which renders fine on GitHub (Markdown collapses single newlines inside a
+  paragraph) but looks broken in a plain-text/IDE view where those newlines are real line
+  breaks — cramped, uneven-length lines instead of clean paragraphs. Reflowed every
+  paragraph and bullet in `README.md` to one continuous line each, letting the editor's own
+  soft-wrap handle display instead. The user had already applied this fix by hand to one
+  paragraph (Time Spent) before flagging it — matched that pattern across the whole file
+  rather than inventing a different one.
+- **"How to Run" got a real skeptical read**: the user asked directly whether
+  `npm install && npm run dev` was genuinely sufficient for someone who's never touched the
+  repo. It wasn't quite — checked `node_modules/vite/package.json`'s own `engines` field
+  and found a real constraint (`^20.19.0 || >=22.12.0`), which an older LTS like Node 18
+  would fail against. Added that as an explicit prerequisite, the actual `git clone` command
+  for this fork (confirmed against `git remote -v` rather than assumed), a note that Vite
+  will pick a different port than 5173 if that one's taken, an explicit "nothing to seed or
+  connect to" callout, a note that `scripts/generate_vehicles.mjs` is historical (how the
+  dataset was originally generated) and not part of running the app, and a one-line note
+  that the `<dialog>`-based modal needs a current browser (true today, worth being upfront
+  about anyway since it's core to the demo).
+- **Surfaced `BUILD_LOG.md` and `technologies.md` more prominently**: both were already
+  linked inline (in "Stack" and "Notable Decisions"), but the user wanted them called out
+  more directly. Added a short "Two docs worth reading alongside this one" callout right
+  after the intro, before any other section — the two links stay in their original inline
+  spots too, this is additive, not a replacement.
+- Also caught and fixed a stale reference while reviewing: `technologies.md`'s
+  "Application State (Bids)" section still pointed at "the README/SUBMISSION doc," left
+  over from before `SUBMISSION.md` was deleted. Updated to point at README's actual
+  section name.
+- Added a new `technologies.md` section on the native `<dialog>` element (what
+  `showModal()` provides for free — focus trap, Escape-to-close, top-layer rendering,
+  implicit dialog role — versus what still had to be hand-built: accessible name, focus
+  order into the dialog, focus return on close, click-outside-to-close). This was the
+  biggest new browser mechanism introduced by the v2 port and hadn't been documented in
+  `technologies.md` yet, unlike everything else in the stack.

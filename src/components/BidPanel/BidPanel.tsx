@@ -62,7 +62,7 @@ export function BidPanel({ vehicle, timingLabel, onPlaceBid }: Props) {
           onChange={(event) => setAmount(Number(event.target.value))}
           aria-label="Bid amount in dollars"
         />
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="cta">
           Place Bid
         </Button>
       </form>

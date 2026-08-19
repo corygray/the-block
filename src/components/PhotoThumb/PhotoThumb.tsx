@@ -4,8 +4,8 @@ import styles from "./PhotoThumb.module.css";
 
 interface Props {
   vehicle: Vehicle;
-  width: number;
-  height: number;
+  width: number | string;
+  height: number | string;
 }
 
 // Small row/list thumbnail: first photo + a count badge for the rest. `onError` swaps in
