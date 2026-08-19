@@ -747,3 +747,266 @@ browsing, search, filtering, sorting, the accordion, and bidding all work end-to
 - Dev server was left running (at the user's request, to view it themselves) rather than
   shut down immediately this time — noted here since that's a deviation from the usual
   standing rule, not an oversight.
+
+## 2026-08-17 — Back to design: rethinking the collapsed row (v2 concepts)
+
+- User pushed back on the shipped-and-working row layout: crowded, disorganized, and not
+  actually prioritized for who's using it. Explicit brief — design from the standpoint of
+  **a dealer buying inventory**, not a casual browser. That reframes what "at a glance"
+  should even contain: a dealer needs enough to decide *whether to click in*, not the full
+  picture. Price and auction timing specifically need to be more prominent than they were.
+- Re-derived the "at a glance" priority list from that persona rather than just tweaking
+  existing spacing:
+  - **Keep, prominent**: price (current bid / starting bid), auction timing/urgency, year/
+    make/model/trim, condition grade, title status, odometer, location, reserve status.
+  - **Keep, de-emphasized to a quick flag**: damage — a dealer needs to know *something's*
+    noted, not the count-as-detail; a small "⚠ N noted" flag instead of nothing.
+  - **Drop from collapsed view entirely, move to expanded-only**: full VIN string and the
+    selling dealership name. Neither one is something a dealer decides on at a glance — VIN
+    is a record-keeping detail for after they've decided to look closer, and dealership
+    name is closer to paperwork than a buying signal. This was the single biggest source of
+    clutter in the shipped row (VIN + lot + dealer name + reserve pill were all competing
+    with price/timing for attention).
+  - Also introduced a real **urgency tier system** instead of one flat amber-text
+    treatment: `urgent` (≤1h left) gets an explicit filled "Ending Soon" badge on top of
+    the color change, `soon` (≤6h) and `normal` get progressively less emphasis, and
+    `upcoming` (not started yet) switches to neutral grey — amber is now reserved
+    specifically for "this is live and counting down," never reused for "scheduled."
+- Built 3 structurally distinct directions (not re-skins of the same DOM) as a new
+  interactive mockup, `design/inventory-row-concepts-v2.html` once a winner's picked:
+  - **1 — Price-Anchored Row**: same dense single-line list shape as the shipped version,
+    but price + countdown are pulled into one unmistakable boxed stat block instead of
+    small text in a corner; vitals collapse to one compact icon line (mileage, location,
+    drivetrain, damage flag).
+  - **2 — Dealer Card Grid**: trades density for scannability — a grid of cards where
+    every card leads with a full-width price/timer band before the photo. Expanding a
+    card inserts a full-grid-width detail band right after it in source order (still no
+    overlay/modal, consistent with the earlier decision to reject that pattern).
+  - **3 — Two-Zone Row + Auction Panel**: row splits into an identity/vitals zone and a
+    bordered "Auction Panel" mini-widget that's a literal visual preview of the expanded
+    bid box — same shape, same border — so expanding feels like that exact panel growing
+    into the real bid form, not a different element appearing.
+  - All three share the same 12-vehicle sample set as v1's mockup for direct comparability,
+    and reuse the already-vetted color tokens (no new blue, amber's meaning now tightened
+    per above).
+- **Two real accessibility bugs caught before publishing, not after**:
+  - All three designs' expanded states set a fixed light background (`#E1E4E7`, matching
+    the shipped app) but the first draft never re-pinned the text tokens alongside it —
+    exactly the dark-mode "light text on now-light background" bug fixed multiple times
+    in the v1 mockup. Fixed by re-declaring `--ink`/`--slate`/`--slate-soft`/etc. on each
+    design's expanded-state wrapper, same pattern as before.
+  - The new "Ending Soon" badge used `var(--amber)` as a *fill* under white text — but that
+    token is tuned for "amber as text on the page background," and its dark-mode value is
+    deliberately brighter for that job. As a fill, it only hit ~2.25:1 with white text in
+    dark mode. Same class of mistake as the Sign-In-button green from the real build; fixed
+    the same way, with a fixed, contrast-checked value (`#96600A`, ~5.6:1 with white)
+    instead of the theme-flipping token.
+- One non-accessibility bug also caught: the hero-photo markup used a `.replace()` string
+  hack to swap in a `detail-photo` class, which actually produced two `class` attributes on
+  one element — HTML parsing silently drops the second, so the class never applied. Fixed
+  by giving `photoPh()` a proper optional class parameter instead of string-patching its
+  own output.
+- Published as a **new** Claude Artifact (separate URL from the v1 mockup), not redeployed
+  in place — this is explicitly a fresh round of concepts to pick from, not an iteration on
+  a decided design.
+- Not committed to git per explicit instruction — design exploration only until a direction
+  is chosen; the winner gets saved into the repo as `design/inventory-row-concepts-v2.html`
+  once picked, alongside (not replacing) the original v1 mockup.
+
+## 2026-08-18 — Picked the Card Grid, swapped its detail view to a modal
+
+- User picked **Concept 2 (Dealer Card Grid)**, but wants the detail view to open as a
+  popover modal instead of the inline expand-in-grid behavior, and asked directly whether
+  a modal was a good choice here — explicitly wanted real WCAG-compliant accessibility,
+  not just a visual popover.
+- **Answered the question, not just the request**: yes, for a card grid specifically —
+  quick-view modals over a grid are a well-established pattern (Amazon/Etsy-style "quick
+  look"), unlike over the dense table-row layouts from the very first design round, which
+  is part of why those directions avoided a modal in the first place (the user rejected a
+  slide-over drawer for the row-based Option A back on day one, specifically for losing
+  list context behind an overlay). That tradeoff is still real for any true modal — it's
+  just a more expected, more standard one for a card grid than it would be for a table row.
+- Trimmed the mockup down to just the winning direction (same pattern as the very first
+  round, where B/C were dropped once Option A was picked) — removed Concepts 1 and 3, the
+  design switcher, and the `expanded` per-card state entirely, since a shared modal no
+  longer needs the grid itself to re-render on open/close.
+- **Built on the native `<dialog>` element rather than a hand-rolled overlay `<div>`**,
+  specifically because it does most of the accessibility work for free:
+  - `showModal()` traps focus inside the dialog automatically, closes on Escape
+    automatically, and renders on the browser's top layer above everything else.
+  - The element carries an implicit ARIA `dialog` role — no manual `role="dialog"` needed.
+  - What's still on us, and what got built: an accessible name (`aria-labelledby`
+    pointing at the vehicle title), focus moving into the dialog in a sensible order,
+    focus returning to whichever card opened it when it closes, and click-outside-to-close.
+  - **Focus order detail**: gave the dialog `tabindex="-1"` and focus it directly
+    (`modal.focus()`) rather than letting focus land on the first focusable child (the
+    close button). That way a screen reader announces the dialog's accessible name — the
+    vehicle's year/make/model/trim — immediately, before the user has tabbed into any
+    control, rather than hearing "Close, button" first with no context yet for what it's
+    closing.
+  - **Focus return is not automatic** — native `<dialog>` does not return focus to the
+    triggering element on close by itself; without handling it, focus drops to `<body>`,
+    which is disorienting for keyboard and screen reader users (they lose their place in
+    the grid). Stored the triggering button and refocus it in the dialog's `close` event.
+  - **Click-outside-to-close used a bounding-box check, not `event.target === dialog`** —
+    the more common version of this technique. Since this dialog has zero padding of its
+    own (the header and body fill it edge to edge), every click inside the visible card
+    lands on a child element, never the dialog element itself, so target-equality would
+    never detect an "inside" click correctly. Checked the click coordinates against the
+    dialog's own bounding rect instead, which works regardless of internal padding.
+- Modal styling deliberately does **not** reuse the "pin the tokens to fixed light values"
+  technique from the accordion's expanded state. That technique existed to make an
+  accordion row look the same regardless of theme while sitting inside an otherwise
+  theme-flipping page; a modal doesn't need that — it can just use the normal theme
+  tokens (`var(--surface)`, `var(--ink)`, etc.), which are already validated as correct,
+  self-consistent pairs *within* each theme. Simpler, and there's no new contrast risk
+  introduced by using them as intended.
+- Redeployed to the same v2 artifact URL (iteration on the picked direction, not a new
+  round) — not yet saved into the repo or committed, still exploration until the modal
+  itself is confirmed to feel right.
+
+## 2026-08-18 — Modal background: the established off-white, with a proactive fix
+
+- User asked for the modal to use the same off-white (`#E1E4E7`) already established as
+  the "active row" background earlier in this project, and explicitly flagged that the
+  text on it needs to stay legible — a dark font.
+- The user naming that requirement directly (rather than it needing to be caught after
+  the fact) is exactly the recurring bug pattern from this whole project: a fixed light
+  background sitting inside an otherwise theme-flipping page needs its text/UI tokens
+  re-pinned to light-mode values right alongside it, or dark mode ends up with light text
+  on a now-permanently-light surface. Applied the same token-pin block already used
+  verbatim for the accordion's expanded card elsewhere in this project (`--ink: #10202E`,
+  `--slate`/`--slate-soft: #000000`, etc.) directly to `dialog.vehicle-modal` — since
+  every element inside the modal is its DOM descendant, the whole modal (header, bid box,
+  spec grid, badges, damage list) inherits the pinned values automatically from one
+  declaration, not a fix repeated field-by-field.
+- Reused pure black for `--slate`/`--slate-soft` (not a softer grey) specifically because
+  that's already the established, previously-requested "maximum legibility on this exact
+  background" choice from earlier in the project — consistency over reinventing a new
+  value.
+- Redeployed to the same v2 artifact URL.
+
+## 2026-08-18 — Swapped the modal's two columns, twice (mobile order changed too)
+
+- User, first pass: swap the two-column layout — content (photo + specs + condition +
+  damage) on the left and larger, bid box on the right and smaller. Currently the reverse.
+- Didn't just swap the markup to match. `.bid-box` was deliberately first in the DOM (same
+  reasoning as the row-based accordion's mobile-first order from earlier in this file):
+  when `.detail-body` collapses to one column on a narrow modal, DOM order becomes reading/
+  visual order, and price should be the first thing encountered there. Swapping the markup
+  directly would have undone that principle without being asked to.
+  - Fixed with the same `order`-based technique already used in the real app: `.bid-box`
+    stayed first in the DOM (mobile still price-first, and so does a screen reader/keyboard
+    user), but a `min-width: 701px` media query gave the newly-classed `.detail-main`
+    `order: 1` and `.bid-box` `order: 2` — grid auto-placement fills columns by order value,
+    so on desktop content lands in the wider `1.5fr` column and bid box in the narrower
+    `1fr` one, a purely visual swap that left DOM/reading order untouched.
+- User, second pass: **explicitly wants the bid section last on mobile too** — a deliberate
+  override of the price-first principle for this specific context. Reasonable: unlike the
+  row-based accordion (a dealer rapidly triaging *many* collapsed rows, where price-first
+  matters for fast scanning), this modal is opened deliberately for *one* vehicle someone
+  already chose to look closer at — review-then-bid is a legitimate, different call for a
+  focused single-vehicle view.
+- Simplified rather than special-cased: since mobile and desktop now want the *same* order
+  (content, then bid), swapped the actual markup — `.detail-main` first, `.bid-box`
+  second — and removed the `order` media query entirely, since it's now redundant with
+  natural DOM order at every width instead of fighting it.
+- Redeployed to the same v2 artifact URL.
+
+## 2026-08-18 — Modal breakpoint moved, and a real bug in "Place Bid" caught by the user
+
+- User: break the modal's two-column detail layout at 900px instead of 700px (stack at
+  899px and below). One-line change: `@media (max-width: 700px)` to `(max-width: 899px)`.
+  The base `.detail-body` rule already provides the two-column layout by default, so no
+  matching `min-width` query was needed — only the stacking override's threshold moved.
+- User then flagged: "Place Bid" renders as a blue button with dark blue text — barely
+  readable. This was a genuine bug, not a preference, and it's the same root-cause
+  pattern that's recurred throughout this project: `.btn-primary` sets
+  `background: var(--ink); color: var(--paper)`, and the modal's earlier token pin
+  (re-declaring `--ink`/`--slate`/etc. to fixed light-mode values) re-declared `--ink` but
+  never `--paper`. So inside the modal, `--ink` was pinned dark navy (correct), but
+  `--paper` fell through to the ambient theme — meaning in dark mode it resolved to
+  `#0B1420`, also very dark. Dark navy button background plus near-black text is exactly
+  "blue button, dark blue text," as reported.
+- User's requested fix (green background, white text) happens to sidestep the bug
+  entirely rather than just patching it: switched the button from `.btn-primary` to the
+  existing `.btn-cta` class, which uses fixed literal colors (`#1B7A4D` / `#fff`), not
+  theme tokens — already contrast-checked in an earlier round, and immune to this
+  category of bug by construction since there's no token to forget pinning.
+- Confirmed `.btn-primary` is now only used outside the modal (header's "Register to
+  Bid"), where it's correctly sitting on the ambient, un-pinned page and both `--ink`
+  and `--paper` flip together as the matched pair they're designed to be — no bug there.
+- Redeployed to the same v2 artifact URL.
+
+## 2026-08-18 — Modal header padding fully zeroed, and the gallery/thumbnails came back
+
+- User: the gap under the modal title still wasn't tight enough after the earlier
+  reduction — turned out there was no actual `margin` on `.modal-header`, the space was
+  entirely `padding-bottom` (10px at that point). Zeroed it out completely
+  (`padding: 18px 22px 0`) rather than trimming further, since "remove all" was explicit.
+- User missed the hero-photo-plus-clickable-thumbnails interaction that existed in the
+  real app's `PhotoGallery` component and asked for it back in this mockup's modal —
+  it had never been ported over here, the modal was still using the plain static
+  placeholder from the row-based designs.
+- Added `galleryHtml(v, activeIndex)`: a hero placeholder (labeled "Photo N of X" so the
+  interaction reads clearly even though, like every image in this mockup, it's a
+  placeholder swatch rather than a real fetched photo — same reasoning as `PhotoThumb`/
+  `PhotoGallery` in the real app for not loading external `placehold.co` URLs here) plus a
+  row of numbered thumbnail buttons below it.
+- **Re-renders only the gallery on thumbnail click, not the whole modal body.** The
+  obvious approach — re-run `modalBody.innerHTML = detailHtml(v)` on every click — would
+  reset scroll position and destroy the spec grid/bid form's DOM nodes for no reason, and
+  would yank keyboard focus away from the thumbnail the user just clicked (the same class
+  of focus-loss problem already solved once for the modal's own open/close). Instead,
+  `wireThumbs()` only swaps `.gallery`'s `outerHTML` and re-wires just that piece, leaving
+  the rest of the modal — and where the user's focus and scroll position are — untouched.
+- Redeployed to the same v2 artifact URL.
+
+## 2026-08-18 — v2 design finalized, saved into the repo
+
+- User confirmed the design is done and asked to prep it for development tomorrow.
+- Saved the final mockup into the repo as `design/card-grid-modal-v2.html` (new file,
+  alongside — not replacing — `design/inventory-listing-mockup.html`, the v1 mockup). Named
+  it for what it actually ended up being (a card grid + modal), not the "row concepts" name
+  used earlier in this log while the direction was still undecided.
+- Rewrote `design/README.md` to describe both rounds: what each mockup is, the path each
+  one took, and links to both. v1's summary is unchanged; v2's covers the three explored
+  directions, why the Card Grid won, why a modal was the right call *here* specifically
+  (unlike the row-based v1 layout, which explicitly rejected one), and the native `<dialog>`
+  accessibility approach.
+- This round was **not committed to git until now** per the explicit "don't commit code,
+  let's go back to designs" instruction from earlier — design-only exploration the whole
+  way through. See `PROGRESS.md` for the concrete punch list of what porting this into the
+  real app actually involves.
+
+## 2026-08-18 — Caught: the filter sidebar and sort toolbar had quietly gone missing
+
+- User caught something before it shipped: the whole v2 exploration (three new layout
+  concepts, then picking the Card Grid, then the modal work) had been iterating on the
+  grid/card/modal in isolation, and the filter sidebar + sort toolbar from v1 had never
+  been carried over into any of the new markup. The mockup had silently narrowed down to
+  just `<div class="grid container" id="grid"></div>` with no filtering or sorting UI at
+  all — not a deliberate removal, just scope that dropped out unnoticed while the layout
+  exploration focused entirely on the list item shape.
+- Confirmed the intent was never to cut filtering/sorting — re-added both, copied directly
+  from the vetted v1 mockup (`design/inventory-listing-mockup.html`) rather than
+  rebuilding from scratch, so the existing accessibility work (label/id associations, the
+  `role="group"`/`aria-labelledby` pattern for Price Range, the number-input overflow fix)
+  came over intact instead of being re-derived and potentially re-broken:
+  - `.filters` sidebar (Make, Body Style, Price Range, Title Status checkboxes) restored
+    as a sticky 240px left column via `.body .container`'s two-column grid, collapsing to
+    a stacked single column under 860px — same breakpoint and technique as v1.
+  - `.listing-toolbar` (result count + Sort control) restored above the grid, same
+    `toolbar-info`/`sort-control` split as v1.
+  - Wired the result count to be computed rather than static text
+    (`document.getElementById("grid-count").textContent`) so it can't drift out of sync
+    with the actual vehicle count the way a hardcoded string would.
+  - Added a line to the mockup's own review banner (`.brief`) noting explicitly that
+    filtering/sorting are unchanged from v1 — the exploration was always about the list
+    item, not about removing them — so this doesn't need re-discovering again later.
+- Redeployed to the same v2 artifact URL, then re-copied the corrected file into
+  `design/card-grid-modal-v2.html` (the previous copy predated this fix and was stale).
+- Lesson: when a design round narrows its mockup down to "just the piece being iterated
+  on" for focus, cross-check the trimmed-down version against the previous round's full
+  page before calling it finalized — it's easy for scope to quietly narrow along with the
+  visual focus.

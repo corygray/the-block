@@ -1,22 +1,41 @@
 # Design Process
 
-`inventory-listing-mockup.html` is the interactive HTML/CSS/JS mockup used to work through
-the buyer marketplace's layout, color, accessibility, and interaction design before any
-React code was written. Open it directly in a browser — it's self-contained, no build step.
+Two rounds of interactive HTML/CSS/JS mockups, used to work through the buyer
+marketplace's layout, color, accessibility, and interaction design before (and alongside)
+the React code. Both are self-contained — open either directly in a browser, no build step.
 
-It went through three layout directions (dense table, card grid, split console), landed on
+## v1 — `inventory-listing-mockup.html`
+
+Went through three layout directions (dense table, card grid, split console), landed on
 the dense table ("Auction Floor"), then iterated through an inline accordion detail/bid
 flow, an accessibility pass (contrast, labeling, color-independent state cues), a color
 pass (removed a blue accent that leaned on too many similar shades), and mobile-specific
 fixes (a broken grid layout, and reordering the accordion so price appears first on
-mobile).
+mobile). This is what got built into the real app first.
 
-See [`../BUILD_LOG.md`](../BUILD_LOG.md) for the full, dated decision log — why each of
-those changes happened, not just what changed.
-
-A live version (easier to browse than opening the file) was also published as a Claude
-Artifact during the design process:
+Live version published during the design process:
 https://claude.ai/code/artifact/aef3026a-a1c7-421d-83b5-57bfecdcd5d0
 
-Note: that link is private by default — it won't be viewable by anyone else unless it's
-explicitly shared from claude.ai. The HTML file in this folder is the reliable copy.
+## v2 — `card-grid-modal-v2.html`
+
+After the row-based layout shipped, revisited it from a dealer's "scan fast, decide what's
+worth a closer look" workflow — the shipped row felt crowded, and price/auction timing
+weren't prominent enough. Explored three new structurally distinct directions (not
+re-skins), picked the **Dealer Card Grid** (every card leads with a full-width price/timer
+band), then swapped its detail view from an inline expand to an accessible popover modal
+built on native `<dialog>` (focus trap, Escape-to-close, and `aria-labelledby` for free;
+focus-to-title-first and focus-return-on-close handled explicitly). Also re-derived what
+belongs in an "at a glance" view for a dealer: VIN and dealer name dropped to expanded-only,
+damage became a quick flag, and a real urgency-tier system replaced one flat amber
+treatment. Ends with a working hero-photo + thumbnail-strip gallery inside the modal.
+
+Live version:
+https://claude.ai/code/artifact/c32c19ac-a10a-4dd5-bd55-3c21920b9994
+
+## Notes
+
+See [`../BUILD_LOG.md`](../BUILD_LOG.md) for the full, dated decision log for both
+rounds — why each change happened, not just what changed.
+
+Both Artifact links are private by default — they won't be viewable by anyone else unless
+explicitly shared from claude.ai. The HTML files in this folder are the reliable copies.
