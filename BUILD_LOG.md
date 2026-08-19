@@ -1575,3 +1575,15 @@ User's last two requests before wrapping up for engineering review.
   480-700px actions and a visibly narrower search share one row; at 860px (right at the
   mobile/desktop boundary) actions tucks in next to the nav menu itself, with only search
   wrapping below it. All three matched the request exactly.
+
+## 2026-08-19 — Trimmed technologies.md back to an actual tech stack
+
+- User: `technologies.md` should only list the project's tech stack — removed the "The
+  `<dialog>` Element" and "Application State (Bids)" sections.
+- Both were legitimate write-ups when added, but neither is really a *technology choice*
+  the way React/Vite/TypeScript/CSS Modules/oxlint/Playwright are: `<dialog>` is a native
+  HTML element, not a library decision, and "Application State" was documenting an
+  architectural decision (in-memory vs. persisted bids), not a tool. Removed rather than
+  reworded, per the request — that reasoning still lives in `BUILD_LOG.md` (the "OpenLane
+  brand-match exploration" and modal-related entries) and in the README's "Assumptions and
+  Scope" section, so nothing is actually lost, just no longer duplicated in the wrong doc.
