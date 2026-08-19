@@ -1552,3 +1552,26 @@ User's last two requests before wrapping up for engineering review.
   inherited line-height (1.5 from `body`) couldn't reintroduce the same kind of vertical
   drift at matching font sizes. Verified with a screenshot: dot, "LIVE:", and the
   countdown text now sit on one visual line.
+
+## 2026-08-19 — Header wrapping: cascading rows instead of a fixed mobile stack
+
+- User: on mobile/small tablet, Sign In and Register should fit inline with the nav menu
+  when there's room — then, mid-turn, refined it further: if there's not room next to the
+  menu, they should sit inline with the search bar instead, with the search bar shrinking
+  to make space, rather than jumping straight to a fully stacked layout.
+- **Replaced hardcoded mobile widths with flex-basis/grow/shrink so the wrapping cascades
+  on its own**, instead of hand-coding three separate states for three breakpoints:
+  `.actions` gets `flex: 0 0 auto` (never grows or shrinks, always just its own content
+  width) and `.search` gets `flex: 1 1 160px` (grows to fill whatever's left on its row,
+  can shrink down to 160px, no more forced `width: 100%`). Combined with the existing
+  `order`, this alone produces all three outcomes the request asked for as one rule, not
+  three: actions joins the nav's row when there's room; failing that, it wraps and search
+  joins *it* on that new row, shrinking to fit; failing that too, search ends up alone on
+  its own row where `flex-grow: 1` naturally fills the width — which is also exactly the
+  "full width" behavior from the original mobile-header request, so nothing about that
+  case needed to be preserved separately.
+- Verified by screenshotting the actual breakpoint boundaries rather than guessing: at
+  375-390px (narrow phone) actions and search each get their own full-width row; at
+  480-700px actions and a visibly narrower search share one row; at 860px (right at the
+  mobile/desktop boundary) actions tucks in next to the nav menu itself, with only search
+  wrapping below it. All three matched the request exactly.

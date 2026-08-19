@@ -91,18 +91,31 @@
    keeps its own order, where search sits snug against the actions group via
    margin-left: auto on .search), and the search bar goes full width instead of the
    fixed-ish 320-420px it uses everywhere else. Same 860px breakpoint the rest of the app
-   uses for its mobile layout. */
+   uses for its mobile layout.
+
+   Neither .actions nor .search gets a hardcoded width — flex-wrap, order, and
+   flex-grow/shrink do the cascading themselves, in order of preference:
+     1. Enough room for nav + actions together → actions sits on nav's row (.actions has
+        no grow/shrink, so it only ever takes its own content width, leaving room for
+        this to happen naturally rather than greedily claiming space).
+     2. Not enough room for that, but actions fits alongside search → actions wraps to
+        its own row, and search (next in flex order) joins it on that same row,
+        shrinking down from its usual width to make room instead of being pushed to a
+        third row.
+     3. Not enough room for either → search ends up alone on its own row, where
+        flex-grow: 1 with nothing to share the row with makes it fill the full width —
+        this is the "search bar full width" case from the original request, now just one
+        outcome of the same rule instead of a separate forced state. */
 @media (max-width: 860px) {
   .search {
     order: 3;
-    flex: 1 1 100%;
+    flex: 1 1 160px;
     max-width: none;
-    width: 100%;
     margin-left: 0;
   }
 
   .actions {
     order: 2;
-    width: 100%;
+    flex: 0 0 auto;
   }
 }
